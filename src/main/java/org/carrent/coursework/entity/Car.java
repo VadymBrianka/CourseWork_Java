@@ -46,5 +46,5 @@ public class Car extends BaseEntity{
 
     // Зв'язок із Service
     @OneToMany(mappedBy = "car")
-    private List<Service> services;
+    private List<ServiceOfCar> services;
 }

@@ -4,11 +4,12 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.carrent.coursework.dto.CarCreationDto;
 import org.carrent.coursework.dto.CarDto;
-import org.carrent.coursework.entity.Car;
 import org.carrent.coursework.service.CarService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/cars")
@@ -20,6 +21,11 @@ public class CarController
     @GetMapping("{id}")
     public ResponseEntity<CarDto> getCarById(@PathVariable Long id){
         return ResponseEntity.ok(carService.getById(id));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<CarDto>> getAllCars(){
+        return ResponseEntity.ok(carService.getAll());
     }
 
     @PostMapping

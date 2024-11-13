@@ -5,6 +5,8 @@ import org.carrent.coursework.dto.CustomerDto;
 import org.carrent.coursework.entity.Customer;
 import org.mapstruct.*;
 
+import java.util.List;
+
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = MappingConstants.ComponentModel.SPRING)
 public interface CustomerMapper {
     Customer toEntity(CustomerDto customerDto);

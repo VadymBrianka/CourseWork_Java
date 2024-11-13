@@ -1,6 +1,6 @@
 package org.carrent.coursework.enums;
 
-public enum ServiceStatus {
+public enum ServiceOfCarStatus {
     SCHEDULED,       // Обслуговування заплановане
     IN_PROGRESS,     // Обслуговування виконується
     COMPLETED,       // Обслуговування завершено

@@ -28,5 +28,5 @@ public class Employee extends Person{
 
     // Зв'язок із Service
     @OneToMany(mappedBy = "employee")
-    private List<Service> services;
+    private List<ServiceOfCar> services;
 }

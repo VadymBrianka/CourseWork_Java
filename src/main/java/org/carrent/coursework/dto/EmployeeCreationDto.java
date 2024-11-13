@@ -14,7 +14,7 @@ public record EmployeeCreationDto(boolean deleted, Date createdAt, Date updatedA
                                   @NotNull @Size(max = 255) @NotEmpty @NotBlank String firstName,
                                   @NotNull @Size(max = 255) @NotEmpty @NotBlank String middleName,
                                   @Past Date dateOfBirth,
-                                  @NotNull @Email(regexp = "^(?=.{1,64}@)[A-Za-z0-9_-]+(\\\\.[A-Za-z0-9_-]+)*@\"+ \"[^-][A-Za-z0-9-]+(\\\\.[A-Za-z0-9-]+)*(\\\\.[A-Za-z]{2,})$") @NotEmpty @NotBlank String email,
+                                  @NotNull @Email(regexp = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$") @NotEmpty @NotBlank String email,
                                   @NotNull @NotEmpty @NotBlank String phoneNumber,
                                   @NotNull @NotEmpty @NotBlank String address,
                                   @NotNull EmployeePosition position) implements Serializable {

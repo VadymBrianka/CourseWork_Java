@@ -5,8 +5,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-import org.carrent.coursework.enums.ServiceStatus;
+import org.carrent.coursework.enums.ServiceOfCarStatus;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Table(name = "services")
@@ -15,7 +16,7 @@ import java.time.LocalDate;
 @Setter
 @ToString
 @NoArgsConstructor
-public class Service extends BaseEntity{
+public class ServiceOfCar extends BaseEntity{
 
     @ManyToOne
     @JoinColumn(name = "car_id")
@@ -35,9 +36,9 @@ public class Service extends BaseEntity{
     private String description;
 
     @Column(name = "cost")
-    private double cost;
+    private BigDecimal cost;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    private ServiceStatus status;
+    private ServiceOfCarStatus status;
 }
