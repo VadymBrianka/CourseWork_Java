@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import org.carrent.coursework.dto.EmployeeCreationDto;
 import org.carrent.coursework.dto.EmployeeDto;
 import org.carrent.coursework.entity.Employee;
+import org.carrent.coursework.exception.CarAlreadyExistsException;
 import org.carrent.coursework.exception.EmployeeNotFoundException;
 import org.carrent.coursework.mapper.EmployeeMapper;
 import org.carrent.coursework.repository.EmployeeRepository;
@@ -31,8 +32,13 @@ public class EmployeeService{
     }
 
     @Transactional
-    public EmployeeDto create(EmployeeCreationDto employee){
+    public EmployeeDto create(EmployeeCreationDto employeeCreationDto){
 
-        return employeeMapper.toDto(employeeRepository.save(employeeMapper.toEntity(employee)));
+        // Перевірка на існування клієнта з таким же licenseNumber
+        if (employeeRepository.existsByPositionAndEmailOrPositionAndPhoneNumber(employeeCreationDto.position(), employeeCreationDto.email(), employeeCreationDto.position() , employeeCreationDto.phoneNumber())) {
+            throw new CarAlreadyExistsException("Customer with email " + employeeCreationDto.email() + ", phone number " + employeeCreationDto.phoneNumber() + " and on position " + employeeCreationDto.position() + " already exists");
+        }
+
+        return employeeMapper.toDto(employeeRepository.save(employeeMapper.toEntity(employeeCreationDto)));
     }
 }

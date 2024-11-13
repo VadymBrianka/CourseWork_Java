@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import org.carrent.coursework.dto.CustomerCreationDto;
 import org.carrent.coursework.dto.CustomerDto;
 import org.carrent.coursework.entity.Customer;
+import org.carrent.coursework.exception.CarAlreadyExistsException;
 import org.carrent.coursework.exception.CustomerNotFoundException;
 import org.carrent.coursework.mapper.CustomerMapper;
 import org.carrent.coursework.repository.CustomerRepository;
@@ -31,8 +32,13 @@ public class CustomerService{
     }
 
     @Transactional
-    public CustomerDto create(CustomerCreationDto customer){
+    public CustomerDto create(CustomerCreationDto customerCreationDto){
 
-        return customerMapper.toDto(customerRepository.save(customerMapper.toEntity(customer)));
+        // Перевірка на існування клієнта з таким же licenseNumber
+        if (customerRepository.existsByLicenseNumber(customerCreationDto.licenseNumber())) {
+            throw new CarAlreadyExistsException("Customer with license number " + customerCreationDto.licenseNumber() + " already exists");
+        }
+
+        return customerMapper.toDto(customerRepository.save(customerMapper.toEntity(customerCreationDto)));
     }
 }
