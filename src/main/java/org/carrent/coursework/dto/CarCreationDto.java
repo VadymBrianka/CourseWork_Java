@@ -1,21 +1,19 @@
 package org.carrent.coursework.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
+import org.carrent.coursework.enums.CarStatus;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.util.Date;
 
 /**
  * DTO for {@link org.carrent.coursework.entity.Car}
  */
-public record CarCreationDto(
-        @Size(message = "Brand name too long", max = 255)
-        @NotBlank(message = "Brand can not be blank")
-        String brand,
-
-        @NotBlank String model,
-        int year,
-
-        @Positive(message = "Price can not be ") int price) implements Serializable {
+public record CarCreationDto(boolean deleted, Date createdAt, Date updatedAt,
+                             @NotNull @Size(max = 255) @NotEmpty @NotBlank String brand,
+                             @NotNull @Size(max = 255) @NotEmpty @NotBlank String model, @Positive int year,
+                             @NotNull @Size(max = 255) @NotEmpty @NotBlank String licensePlate,
+                             @NotNull CarStatus status, @NotNull @Positive Long mileage,
+                             @Positive BigDecimal price) implements Serializable {
 }

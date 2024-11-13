@@ -10,8 +10,6 @@ import org.carrent.coursework.repository.CarRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @Service
 @Transactional(readOnly = true)
 @AllArgsConstructor

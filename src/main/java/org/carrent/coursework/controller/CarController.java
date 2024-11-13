@@ -7,7 +7,6 @@ import org.carrent.coursework.dto.CarDto;
 import org.carrent.coursework.entity.Car;
 import org.carrent.coursework.service.CarService;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

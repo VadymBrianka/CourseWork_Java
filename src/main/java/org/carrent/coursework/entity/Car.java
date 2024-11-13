@@ -5,6 +5,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import org.carrent.coursework.enums.CarStatus;
+
+import java.math.BigDecimal;
+import java.util.List;
 
 @Table(name = "cars")
 @Entity
@@ -12,10 +16,7 @@ import lombok.ToString;
 @Setter
 @ToString
 @NoArgsConstructor
-public class Car {
-    @Id
-    @GeneratedValue(strategy =GenerationType.IDENTITY)
-    private Long id;
+public class Car extends BaseEntity{
 
     @Column(name = "brand")
     private String brand;
@@ -26,8 +27,24 @@ public class Car {
     @Column(name = "year")
     private int year;
 
+    @Column(name = "license_plate")
+    private String licensePlate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    private CarStatus status;
+
+    @Column(name = "mileage")
+    private Long mileage;
+
     @Column(name = "price")
-    private int price;
+    private BigDecimal price;
 
+    // Зв'язок із Order
+    @OneToMany(mappedBy = "car")
+    private List<Order> orders;
 
+    // Зв'язок із Service
+    @OneToMany(mappedBy = "car")
+    private List<Service> services;
 }
