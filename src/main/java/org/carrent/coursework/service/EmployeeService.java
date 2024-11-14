@@ -34,7 +34,7 @@ public class EmployeeService{
     @Transactional
     public EmployeeDto create(EmployeeCreationDto employeeCreationDto){
 
-        // Перевірка на існування клієнта з таким же licenseNumber
+        // Перевірка на існування працівника з таким же даними
         if (employeeRepository.existsByPositionAndEmailOrPositionAndPhoneNumber(employeeCreationDto.position(), employeeCreationDto.email(), employeeCreationDto.position() , employeeCreationDto.phoneNumber())) {
             throw new CarAlreadyExistsException("Customer with email " + employeeCreationDto.email() + ", phone number " + employeeCreationDto.phoneNumber() + " and on position " + employeeCreationDto.position() + " already exists");
         }

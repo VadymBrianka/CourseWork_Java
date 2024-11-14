@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import org.carrent.coursework.dto.ServiceOfCarCreationDto;
 import org.carrent.coursework.dto.ServiceOfCarDto;
 import org.carrent.coursework.entity.ServiceOfCar;
+import org.carrent.coursework.exception.CarAlreadyExistsException;
 import org.carrent.coursework.exception.ServiceOfCarNotFoundException;
 import org.carrent.coursework.mapper.ServiceOfCarMapper;
 import org.carrent.coursework.repository.ServiceOfCarRepository;
@@ -30,8 +31,13 @@ public class ServiceOfCarService {
     }
 
     @Transactional
-    public ServiceOfCarDto create(ServiceOfCarCreationDto serviceOfCar){
+    public ServiceOfCarDto create(ServiceOfCarCreationDto serviceOfCarCreationDto){
 
-        return serviceOfCarMapper.toDto(serviceOfCarRepository.save(serviceOfCarMapper.toEntity(serviceOfCar)));
+        // Перевірка на існування сервіса з такими ж даними
+        if (serviceOfCarRepository.existsByCar_IdAndStartDateAndEndDateAndDescription(carCreationDto.id(), serviceOfCarCreationDto.startDate(), serviceOfCarCreationDto.endDate() , serviceOfCarCreationDto.description())) {
+            throw new CarAlreadyExistsException("Service with car_id " + carCreationDto.id() + ", start date " + serviceOfCarCreationDto.startDate() + ", end date " + serviceOfCarCreationDto.endDate() + " and with description " + serviceOfCarCreationDto.description() + " already exists");
+        }
+
+        return serviceOfCarMapper.toDto(serviceOfCarRepository.save(serviceOfCarMapper.toEntity(serviceOfCarCreationDto)));
     }
 }

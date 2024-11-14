@@ -10,7 +10,15 @@ import java.util.Date;
 /**
  * DTO for {@link org.carrent.coursework.entity.ServiceOfCar}
  */
-public record ServiceOfCarDto(Long id, boolean deleted, Date createdAt, Date updatedAt, Long carId, Long employeeId,
-                         LocalDate startDate, LocalDate endDate, String description, BigDecimal cost,
-                              ServiceOfCarStatus status) implements Serializable {
-}
+public record ServiceOfCarDto(Long id,
+                              boolean deleted,
+                              Date createdAt,
+                              Date updatedAt,
+                              Long carId,
+                              Long employeeId,
+                              LocalDate startDate,
+                              LocalDate endDate,
+                              String description,
+                              BigDecimal cost,
+                              ServiceOfCarStatus status
+) implements Serializable { }

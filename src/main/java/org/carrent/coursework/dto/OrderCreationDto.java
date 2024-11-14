@@ -12,7 +12,11 @@ import java.util.Date;
 /**
  * DTO for {@link org.carrent.coursework.entity.Order}
  */
-public record OrderCreationDto(boolean deleted, Date createdAt, Date updatedAt, @NotNull LocalDate startDate,
-                               @NotNull LocalDate endDate, @NotNull OrderStatus status,
-                               @PositiveOrZero BigDecimal cost) implements Serializable {
-}
+public record OrderCreationDto(
+                               boolean deleted,
+                               Date createdAt, Date updatedAt,
+                               @NotNull LocalDate startDate,
+                               @NotNull LocalDate endDate,
+                               @NotNull OrderStatus status,
+                               @PositiveOrZero BigDecimal cost
+) implements Serializable { }
