@@ -7,6 +7,7 @@ import org.carrent.coursework.enums.ServiceOfCarStatus;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 /**
@@ -14,12 +15,14 @@ import java.util.Date;
  */
 public record ServiceOfCarCreationDto(
                                       boolean deleted,
+                                      @NotNull Long carId,
+                                      @NotNull Long employeeId,
                                       Date createdAt,
                                       Date updatedAt,
-                                      @NotNull LocalDate startDate,
-                                      @NotNull LocalDate endDate,
+                                      @NotNull LocalDateTime startDate,
+                                      @NotNull LocalDateTime endDate,
                                       @NotNull String description,
                                       @PositiveOrZero BigDecimal cost,
-                                      @NotNull ServiceOfCarStatus status
+                                      ServiceOfCarStatus status
 
 ) implements Serializable { }

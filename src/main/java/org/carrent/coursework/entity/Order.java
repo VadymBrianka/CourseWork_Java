@@ -9,6 +9,7 @@ import org.carrent.coursework.enums.OrderStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Table(name = "orders")
 @Entity
@@ -31,10 +32,10 @@ public class Order extends BaseEntity{
     private Employee employee;
 
     @Column(name = "start_date")
-    private LocalDate startDate;
+    private LocalDateTime startDate;
 
     @Column(name = "end_date")
-    private LocalDate endDate;
+    private LocalDateTime endDate;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")

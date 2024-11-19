@@ -9,6 +9,7 @@ import org.carrent.coursework.enums.ServiceOfCarStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Table(name = "services")
 @Entity
@@ -27,10 +28,10 @@ public class ServiceOfCar extends BaseEntity{
     private Employee employee;
 
     @Column(name = "start_date")
-    private LocalDate startDate;
+    private LocalDateTime startDate;
 
     @Column(name = "end_date")
-    private LocalDate endDate;
+    private LocalDateTime endDate;
 
     @Column(name = "description")
     private String description;
@@ -41,4 +42,5 @@ public class ServiceOfCar extends BaseEntity{
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     private ServiceOfCarStatus status;
+
 }

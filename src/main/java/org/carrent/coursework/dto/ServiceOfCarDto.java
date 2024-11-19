@@ -5,6 +5,7 @@ import org.carrent.coursework.enums.ServiceOfCarStatus;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 /**
@@ -16,8 +17,8 @@ public record ServiceOfCarDto(Long id,
                               Date updatedAt,
                               Long carId,
                               Long employeeId,
-                              LocalDate startDate,
-                              LocalDate endDate,
+                              LocalDateTime startDate,
+                              LocalDateTime endDate,
                               String description,
                               BigDecimal cost,
                               ServiceOfCarStatus status

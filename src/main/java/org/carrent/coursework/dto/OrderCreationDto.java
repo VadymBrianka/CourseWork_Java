@@ -7,6 +7,7 @@ import org.carrent.coursework.enums.OrderStatus;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 /**
@@ -14,9 +15,14 @@ import java.util.Date;
  */
 public record OrderCreationDto(
                                boolean deleted,
-                               Date createdAt, Date updatedAt,
-                               @NotNull LocalDate startDate,
-                               @NotNull LocalDate endDate,
-                               @NotNull OrderStatus status,
+                               @NotNull Long carId,
+                               @NotNull Long employeeId,
+                               @NotNull Long customerId,
+                               Date createdAt,
+                               Date updatedAt,
+                               @NotNull LocalDateTime startDate,
+                               @NotNull LocalDateTime endDate,
+//                               @NotNull
+                               OrderStatus status,
                                @PositiveOrZero BigDecimal cost
 ) implements Serializable { }
