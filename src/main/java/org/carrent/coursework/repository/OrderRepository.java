@@ -5,6 +5,8 @@ import org.carrent.coursework.entity.Order;
 import org.carrent.coursework.enums.OrderStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -20,8 +22,19 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
 
 //    Optional<Order> findFirstByCar_IdAndEndDateGreaterThanOrStartDateLessThanAndStatusIsNotLike(Long carId, LocalDateTime startDate, LocalDateTime endDate, OrderStatus orderStatus);
 
-    Optional<Order> findFirstByCar_IdAndStartDateLessThanEqualAndEndDateGreaterThanEqualAndStatusIn(
-        Long carId, LocalDateTime endDate, LocalDateTime startDate, List<OrderStatus> statuses);
+//    Optional<Order> findFirstByCar_IdAndStartDateLessThanEqualAndEndDateGreaterThanEqualAndStatusIn(
+//        Long carId, LocalDateTime endDate, LocalDateTime startDate, List<OrderStatus> statuses);
+
+    @Query("SELECT o FROM Order o " +
+            "WHERE o.car.id = :carId " +
+            "AND o.startDate <= :endDate " +
+            "AND o.endDate >= :startDate " +
+            "AND o.status IN :statuses")
+    Optional<Order> findFirstByCarAndDateRangeAndStatuses(
+            @Param("carId") Long carId,
+            @Param("endDate") LocalDateTime endDate,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("statuses") List<OrderStatus> statuses);
 
 
     Optional<Order> findFirstByCar_IdAndStartDateEquals(Long carId, LocalDateTime date);

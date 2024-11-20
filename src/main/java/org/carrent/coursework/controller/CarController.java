@@ -6,6 +6,8 @@ import org.carrent.coursework.dto.CarCreationDto;
 import org.carrent.coursework.dto.CarDto;
 import org.carrent.coursework.enums.CarStatus;
 import org.carrent.coursework.service.CarService;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -21,15 +23,17 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/cars")
 @AllArgsConstructor
-public class CarController {
+public class  CarController {
     private final CarService carService;
 
     @GetMapping("{id}")
+    @Cacheable(value = "cars", key = "#id")
     public ResponseEntity<CarDto> getCarById(@PathVariable Long id) {
         return ResponseEntity.ok(carService.getById(id));
     }
 
     @GetMapping
+    @Cacheable(value = "cars")
     public ResponseEntity<Page<CarDto>> getAllCars(
             @RequestParam(defaultValue = "0") int page,        // Номер сторінки
             @RequestParam(defaultValue = "10") int size,       // Розмір сторінки
@@ -50,11 +54,13 @@ public class CarController {
     }
 
     @PostMapping
+    @CacheEvict(value = "cars", allEntries = true)
     public ResponseEntity<CarDto> createCar(@Valid @RequestBody CarCreationDto carCreationDto) {
         return new ResponseEntity<>(carService.create(carCreationDto), HttpStatus.CREATED);
     }
 
     @PutMapping("{id}")
+    @CacheEvict(value = "cars", allEntries = true)
     public ResponseEntity<CarDto> updateCar(
             @PathVariable Long id,
             @Valid @RequestBody CarDto carDto

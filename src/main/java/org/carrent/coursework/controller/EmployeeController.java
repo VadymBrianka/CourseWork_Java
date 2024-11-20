@@ -6,6 +6,8 @@ import org.carrent.coursework.dto.EmployeeCreationDto;
 import org.carrent.coursework.dto.EmployeeDto;
 import org.carrent.coursework.enums.EmployeePosition;
 import org.carrent.coursework.service.EmployeeService;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -26,11 +28,13 @@ public class EmployeeController {
     private final EmployeeService employeeService;
 
     @GetMapping("{id}")
+    @Cacheable(value = "employees", key = "#id")
     public ResponseEntity<EmployeeDto> getEmployeeById(@PathVariable Long id) {
         return ResponseEntity.ok(employeeService.getById(id));
     }
 
     @GetMapping
+    @Cacheable(value = "employees")
     public ResponseEntity<Page<EmployeeDto>> getAllEmployees(
             @RequestParam(defaultValue = "0") int page,        // Номер сторінки
             @RequestParam(defaultValue = "10") int size,       // Розмір сторінки
@@ -48,11 +52,13 @@ public class EmployeeController {
     }
 
     @PostMapping
+    @CacheEvict(value = "employees", allEntries = true)
     public ResponseEntity<EmployeeDto> createEmployee(@Valid @RequestBody EmployeeCreationDto employeeCreationDto) {
         return new ResponseEntity<>(employeeService.create(employeeCreationDto), HttpStatus.CREATED);
     }
 
     @PutMapping("{id}")
+    @CacheEvict(value = "employees", allEntries = true)
     public ResponseEntity<EmployeeDto> updateEmployee(
             @PathVariable Long id,
             @Valid @RequestBody EmployeeDto employeeDto

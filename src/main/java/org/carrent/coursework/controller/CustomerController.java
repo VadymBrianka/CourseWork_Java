@@ -7,6 +7,8 @@ import org.carrent.coursework.dto.CustomerCreationDto;
 import org.carrent.coursework.dto.CustomerDto;
 import org.carrent.coursework.enums.CarStatus;
 import org.carrent.coursework.service.CustomerService;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,11 +30,13 @@ public class CustomerController {
     private final CustomerService customerService;
 
     @GetMapping("{id}")
+    @Cacheable(value = "customers", key = "#id")
     public ResponseEntity<CustomerDto> getCustomerById(@PathVariable Long id) {
         return ResponseEntity.ok(customerService.getById(id));
     }
 
     @GetMapping
+    @Cacheable(value = "customers")
     public ResponseEntity<Page<CustomerDto>> getAllCustomers(
             @RequestParam(defaultValue = "0") int page,        // Номер сторінки
             @RequestParam(defaultValue = "10") int size,       // Розмір сторінки
@@ -50,11 +54,13 @@ public class CustomerController {
     }
 
     @PostMapping
+    @CacheEvict(value = "customers", allEntries = true)
     public ResponseEntity<CustomerDto> createCustomer(@Valid @RequestBody CustomerCreationDto customerCreationDto) {
         return new ResponseEntity<>(customerService.create(customerCreationDto), HttpStatus.CREATED);
     }
 
     @PutMapping("{id}")
+    @CacheEvict(value = "customers", allEntries = true)
     public ResponseEntity<CustomerDto> updateCustomer(
             @PathVariable Long id,
             @Valid @RequestBody CustomerDto customerDto

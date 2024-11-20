@@ -6,6 +6,8 @@ import org.carrent.coursework.dto.ServiceOfCarCreationDto;
 import org.carrent.coursework.dto.ServiceOfCarDto;
 import org.carrent.coursework.enums.ServiceOfCarStatus;
 import org.carrent.coursework.service.ServiceOfCarService;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -26,23 +28,27 @@ public class ServiceOfCarController {
     private final ServiceOfCarService serviceOfCarService;
 
     @GetMapping("{id}")
+    @Cacheable(value = "services", key = "#id")
     public ResponseEntity<ServiceOfCarDto> getServiceById(@PathVariable Long id) {
         return ResponseEntity.ok(serviceOfCarService.getById(id));
     }
 
     @GetMapping
+    @Cacheable(value = "services")
     public ResponseEntity<Page<ServiceOfCarDto>> getAllServices(Pageable pageable) {
         // Використовуємо пагінацію для отримання сервісів автомобілів
         return ResponseEntity.ok(serviceOfCarService.getAll(pageable));
     }
 
     @PostMapping
+    @CacheEvict(value = "services", allEntries = true)
     public ResponseEntity<ServiceOfCarDto> createService(@Valid @RequestBody ServiceOfCarCreationDto serviceOfCarCreationDto) {
         // Створюємо новий сервіс автомобіля
         return new ResponseEntity<>(serviceOfCarService.create(serviceOfCarCreationDto), HttpStatus.CREATED);
     }
 
     @PutMapping("{id}")
+    @CacheEvict(value = "services", allEntries = true)
     public ResponseEntity<ServiceOfCarDto> updateService(@PathVariable Long id, @Valid @RequestBody ServiceOfCarDto serviceOfCarDto) {
         // Оновлюємо сервіс автомобіля за ID
         ServiceOfCarDto updatedService = serviceOfCarService.updateServiceOfCar(id, serviceOfCarDto);

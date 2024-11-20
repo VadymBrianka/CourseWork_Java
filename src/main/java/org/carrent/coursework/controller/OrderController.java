@@ -8,6 +8,8 @@ import org.carrent.coursework.dto.OrderDto;
 import org.carrent.coursework.enums.EmployeePosition;
 import org.carrent.coursework.enums.OrderStatus;
 import org.carrent.coursework.service.OrderService;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -30,11 +32,13 @@ public class OrderController {
     private final OrderService orderService;
 
     @GetMapping("{id}")
+    @Cacheable(value = "orders", key = "#id")
     public ResponseEntity<OrderDto> getOrderById(@PathVariable Long id) {
         return ResponseEntity.ok(orderService.getById(id));
     }
 
     @GetMapping
+    @Cacheable(value = "orders")
     public ResponseEntity<Page<OrderDto>> getAllOrders(
             @RequestParam(defaultValue = "0") int page,        // Номер сторінки
             @RequestParam(defaultValue = "10") int size,       // Розмір сторінки
@@ -52,11 +56,13 @@ public class OrderController {
     }
 
     @PostMapping
+    @CacheEvict(value = "orders", allEntries = true)
     public ResponseEntity<OrderDto> createOrder(@Valid @RequestBody OrderCreationDto orderCreationDto) {
         return new ResponseEntity<>(orderService.create(orderCreationDto), HttpStatus.CREATED);
     }
 
     @PutMapping("{id}")
+    @CacheEvict(value = "orders", allEntries = true)
     public ResponseEntity<OrderDto> updateOrder(
             @PathVariable Long id,
             @Valid @RequestBody OrderDto orderDto

@@ -82,13 +82,13 @@ public class OrderService {
 //            throw new CarNotAvailableException("Car is reserved during this period!");
 //        }
 
-        if (orderRepository.findFirstByCar_IdAndStartDateLessThanEqualAndEndDateGreaterThanEqualAndStatusIn(
+        if (orderRepository.findFirstByCarAndDateRangeAndStatuses(
                 car.getId(), today, today,
                 List.of(OrderStatus.ACTIVE, OrderStatus.RESERVED)).isPresent()) {
             throw new CarNotAvailableException("Car is reserved during this period!");
         }
 
-        if (serviceOfCarRepository.findFirstByCar_IdAndEndDateGreaterThanOrStartDateLessThan(
+        if (serviceOfCarRepository.findFirstByCarIdAndDateRange(
                 car.getId(), today, today).isPresent()) {
             throw new CarNotAvailableException("Car is going to be in service during this period!");
         }
