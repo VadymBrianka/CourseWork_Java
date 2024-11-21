@@ -9,6 +9,8 @@ import org.carrent.coursework.enums.CarStatus;
 import org.carrent.coursework.enums.EmployeePosition;
 import org.carrent.coursework.enums.OrderStatus;
 import org.carrent.coursework.enums.ServiceOfCarStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.carrent.coursework.exception.*;
 import org.carrent.coursework.mapper.OrderMapper;
 import org.carrent.coursework.repository.*;
@@ -35,122 +37,163 @@ public class OrderService {
     private final OrderMapper orderMapper;
     private final ServiceOfCarRepository serviceOfCarRepository;
 
+    private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
+
     public OrderDto getById(Long id) {
+        logger.info("Fetching order with ID: {}", id);
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new OrderNotFoundException("Order not found"));
+                .orElseThrow(() -> {
+                    logger.error("Order not found with ID: {}", id);
+                    return new OrderNotFoundException("Order not found");
+                });
+        logger.debug("Order found: {}", order);
         return orderMapper.toDto(order);
     }
 
     public Page<OrderDto> getAll(Pageable pageable) {
-        return orderRepository.findAll(pageable) // Використовуємо пагінацію
-                .map(orderMapper::toDto); // Перетворюємо Order у OrderDto
+        logger.info("Fetching all orders with pageable: {}", pageable);
+        Page<OrderDto> result = orderRepository.findAll(pageable)
+                .map(orderMapper::toDto);
+        logger.debug("Total orders fetched: {}", result.getTotalElements());
+        return result;
     }
 
+
     public OrderDto updateOrder(Long id, OrderDto orderDto) {
+        Logger logger = LoggerFactory.getLogger(getClass());
+
+        logger.info("Called updateOrder with id: {}, orderDto: {}", id, orderDto);
+
+        // Fetch the existing order
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new OrderNotFoundException("Order with ID: " + id + " not found"));
+                .orElseThrow(() -> {
+                    logger.error("Order with ID: {} not found", id);
+                    return new OrderNotFoundException("Order with ID: " + id + " not found");
+                });
+
+        logger.debug("Fetched existing order: {}", order);
+
+        // Update the order
         orderMapper.partialUpdate(orderDto, order);
+        logger.debug("Order after applying updates: {}", order);
+
+        // Save the updated order
         Order updatedOrder = orderRepository.save(order);
-        return orderMapper.toDto(updatedOrder);
+        logger.info("Order with ID: {} successfully updated", updatedOrder.getId());
+
+        // Map the updated order to DTO
+        OrderDto updatedOrderDto = orderMapper.toDto(updatedOrder);
+        logger.debug("Mapped updated order to DTO: {}", updatedOrderDto);
+
+        return updatedOrderDto;
     }
+
 
 
     @Transactional
     public OrderDto create(OrderCreationDto orderDto) {
-        // Перевірка існування автомобіля
+        logger.info("Creating new order: {}", orderDto);
+
+        // Validate car existence
         Car car = carRepository.findById(orderDto.carId())
-                .orElseThrow(() -> new CarNotFoundException("Car not found with ID: " + orderDto.carId()));
+                .orElseThrow(() -> {
+                    logger.error("Car not found with ID: {}", orderDto.carId());
+                    return new CarNotFoundException("Car not found with ID: " + orderDto.carId());
+                });
 
-        // Перевірка існування співробітника
+        // Validate employee existence
         Employee employee = employeeRepository.findById(orderDto.employeeId())
-                .orElseThrow(() -> new EmployeeNotFoundException("Employee not found with ID: " + orderDto.employeeId()));
+                .orElseThrow(() -> {
+                    logger.error("Employee not found with ID: {}", orderDto.employeeId());
+                    return new EmployeeNotFoundException("Employee not found with ID: " + orderDto.employeeId());
+                });
 
-        // Перевірка позиції співробітника
+        // Validate employee position
         if (employee.getPosition() == EmployeePosition.TECHNICIAN) {
+            logger.error("Technicians cannot create orders. Employee ID: {}", orderDto.employeeId());
             throw new EmployeePositionNotAllowedException("Technicians cannot create orders");
         }
 
-        // Перевірка існування клієнта
+        // Validate customer existence
         Customer customer = customerRepository.findById(orderDto.customerId())
-                .orElseThrow(() -> new CustomerNotFoundException("Customer not found with ID: " + orderDto.customerId()));
+                .orElseThrow(() -> {
+                    logger.error("Customer not found with ID: {}", orderDto.customerId());
+                    return new CustomerNotFoundException("Customer not found with ID: " + orderDto.customerId());
+                });
 
+        // Additional validations
+        logger.debug("Validating order constraints for car ID: {}", orderDto.carId());
         LocalDateTime today = LocalDateTime.now();
-
-        // Перевірка перетину ордерів
-//        if (orderRepository.findFirstByCar_IdAndEndDateGreaterThanOrStartDateLessThanAndStatusIsNotLike(
-//                car.getId(), today, today, OrderStatus.CANCELED).isPresent()) {
-//            throw new CarNotAvailableException("Car is reserved during this period!");
-//        }
-
         if (orderRepository.findFirstByCarAndDateRangeAndStatuses(
                 car.getId(), today, today,
                 List.of(OrderStatus.ACTIVE, OrderStatus.RESERVED)).isPresent()) {
+            logger.error("Car is reserved during this period: Car ID: {}", orderDto.carId());
             throw new CarNotAvailableException("Car is reserved during this period!");
         }
 
-        if (serviceOfCarRepository.findFirstByCarIdAndDateRange(
-                car.getId(), today, today).isPresent()) {
-            throw new CarNotAvailableException("Car is going to be in service during this period!");
-        }
-        if (orderRepository.existsByCar_IdAndStartDateAndEndDate(
-                orderDto.carId(),
-                orderDto.startDate(),
-                orderDto.endDate())) {
-            throw new OrderAlreadyExistsException("Order with car_id " + orderDto.carId()
-                    + ", start date " + orderDto.startDate()
-                    + ", end date " + orderDto.endDate()
-                    + " already exists");
-        }
-
-        // Створення замовлення
+        logger.debug("Mapping DTO to entity for order creation");
         Order order = orderMapper.toEntity(orderDto);
         order.setCar(car);
         order.setEmployee(employee);
         order.setCustomer(customer);
 
-        // Збереження замовлення
+        logger.debug("Saving order to the database");
         Order savedOrder = orderRepository.save(order);
 
-        // Оновлення статусу автомобіля
+        // Update car status
         if ((order.getStartDate().isBefore(today) || order.getStartDate().isEqual(today)) &&
                 (order.getEndDate().isAfter(today) || order.getEndDate().isEqual(today))) {
             car.setStatus(CarStatus.RENTED);
-            carRepository.save(car); // Збереження оновленого статусу автомобіля
+            carRepository.save(car);
+            logger.info("Car status updated to RENTED for Car ID: {}", car.getId());
         }
+
         order.setStatus(OrderStatus.RESERVED);
+        logger.info("Order created successfully with ID: {}", savedOrder.getId());
         return orderMapper.toDto(savedOrder);
     }
 
 
     @Transactional
     public void updateOrderStatuses() {
-        System.out.println("Orderrrrrrrrrr");
+        logger.info("Updating order statuses");
         LocalDateTime now = LocalDateTime.now();
         List<Order> orders = orderRepository.findAll();
 
         for (Order order : orders) {
+            logger.debug("Processing order ID: {}", order.getId());
             if ((order.getStatus() != OrderStatus.CANCELED) || (order.getStatus() != OrderStatus.COMPLETED)) {
                 if (order.getStartDate().isAfter(now)) {
-                    // Ордер ще не активний
                     order.setStatus(OrderStatus.RESERVED);
                 } else if (order.getStartDate().isBefore(now) && order.getEndDate().isAfter(now)) {
-                    // Ордер активний
                     order.setStatus(OrderStatus.ACTIVE);
                 } else if (order.getEndDate().isBefore(now)) {
-                    // Ордер завершений
                     order.setStatus(OrderStatus.COMPLETED);
                 }
+                logger.debug("Updated status for order ID: {}", order.getId());
             }
         }
-        orderRepository.saveAll(orders); // Масове збереження
+        orderRepository.saveAll(orders);
+        logger.info("Order statuses updated successfully");
     }
+
 
     @Transactional(readOnly = true)
     public Page<OrderDto> getSortedOrders(String sortBy, String order, Pageable pageable) {
+        Logger logger = LoggerFactory.getLogger(getClass());
+
+        logger.info("Called getSortedOrders with sortBy: {}, order: {}, pageable: {}", sortBy, order, pageable);
+
         Sort sort = order.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
-        Page<Order> prdersPage = orderRepository.findAll(sortedPageable);
-        return prdersPage.map(orderMapper::toDto);
+
+        logger.debug("Constructed sorted Pageable: {}", sortedPageable);
+
+        Page<Order> ordersPage = orderRepository.findAll(sortedPageable);
+
+        logger.info("Found {} orders", ordersPage.getTotalElements());
+
+        return ordersPage.map(orderMapper::toDto);
     }
 
     @Transactional(readOnly = true)
@@ -162,53 +205,71 @@ public class OrderService {
                                             OrderStatus status,
                                             BigDecimal cost,
                                             Pageable pageable) {
+        Logger logger = LoggerFactory.getLogger(getClass());
+
+        logger.info("Called getFilteredOrders with carId: {}, customerId: {}, employeeId: {}, startDate: {}, endDate: {}, status: {}, cost: {}, pageable: {}",
+                carId, customerId, employeeId, startDate, endDate, status, cost, pageable);
+
         Specification<Order> specification = Specification.where(null);
 
         if (carId != null) {
             specification = specification.and((root, query, criteriaBuilder) ->
                     criteriaBuilder.equal(root.get("car").get("id"), carId));
+            logger.debug("Added filter by carId: {}", carId);
         }
         if (customerId != null) {
             specification = specification.and((root, query, criteriaBuilder) ->
                     criteriaBuilder.equal(root.get("customer").get("id"), customerId));
+            logger.debug("Added filter by customerId: {}", customerId);
         }
         if (employeeId != null) {
             specification = specification.and((root, query, criteriaBuilder) ->
                     criteriaBuilder.equal(root.get("employee").get("id"), employeeId));
+            logger.debug("Added filter by employeeId: {}", employeeId);
         }
         if (startDate != null) {
             specification = specification.and((root, query, criteriaBuilder) ->
                     criteriaBuilder.greaterThanOrEqualTo(root.get("startDate"), startDate));
+            logger.debug("Added filter by startDate: {}", startDate);
         }
         if (endDate != null) {
             specification = specification.and((root, query, criteriaBuilder) ->
                     criteriaBuilder.lessThanOrEqualTo(root.get("endDate"), endDate));
+            logger.debug("Added filter by endDate: {}", endDate);
         }
         if (cost != null) {
             specification = specification.and((root, query, criteriaBuilder) ->
                     criteriaBuilder.equal(root.get("cost"), cost));
+            logger.debug("Added filter by cost: {}", cost);
         }
         if (status != null) {
             specification = specification.and((root, query, criteriaBuilder) ->
                     criteriaBuilder.equal(root.get("status"), status));
+            logger.debug("Added filter by status: {}", status);
         }
 
         Page<Order> orders = orderRepository.findAll(specification, pageable);
 
-        return orders.map(order -> new OrderDto(
-                order.getId(),
-                order.isDeleted(),
-                order.getCreatedAt(),
-                order.getUpdatedAt(),
-                order.getCar().getId(),
-                order.getCustomer().getId(),
-                order.getEmployee().getId(),
-                order.getStartDate(),
-                order.getEndDate(),
-                order.getStatus(),
-                order.getCost()
-        ));
+        logger.info("Found {} orders matching filters", orders.getTotalElements());
+
+        return orders.map(order -> {
+            logger.debug("Mapping Order to OrderDto: {}", order);
+            return new OrderDto(
+                    order.getId(),
+                    order.isDeleted(),
+                    order.getCreatedAt(),
+                    order.getUpdatedAt(),
+                    order.getCar().getId(),
+                    order.getCustomer().getId(),
+                    order.getEmployee().getId(),
+                    order.getStartDate(),
+                    order.getEndDate(),
+                    order.getStatus(),
+                    order.getCost()
+            );
+        });
     }
+
 
 
 }

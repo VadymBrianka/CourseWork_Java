@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @Setter
-@ToString
+
 @NoArgsConstructor
 public class Order extends BaseEntity{
 

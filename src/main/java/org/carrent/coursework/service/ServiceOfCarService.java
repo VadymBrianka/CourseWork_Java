@@ -6,6 +6,8 @@ import org.carrent.coursework.dto.ServiceOfCarCreationDto;
 import org.carrent.coursework.dto.ServiceOfCarDto;
 import org.carrent.coursework.entity.Car;
 import org.carrent.coursework.entity.Order;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.carrent.coursework.enums.CarStatus;
 import org.carrent.coursework.enums.EmployeePosition;
 import org.carrent.coursework.enums.OrderStatus;
@@ -34,123 +36,121 @@ import java.util.List;
 @Transactional(readOnly = true)
 @AllArgsConstructor
 public class ServiceOfCarService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ServiceOfCarService.class);
+
     private final ServiceOfCarRepository serviceOfCarRepository;
     private CarRepository carRepository;
     private EmployeeRepository employeeRepository;
     OrderRepository orderRepository;
     private final ServiceOfCarMapper serviceOfCarMapper;
-    public ServiceOfCarDto getById(Long id){
-        ServiceOfCar serviceOfCar = serviceOfCarRepository.findById(id).orElseThrow(() -> new ServiceOfCarNotFoundException("Service not found"));
+
+
+    public ServiceOfCarDto getById(Long id) {
+        logger.info("Fetching service by ID: {}", id);
+        ServiceOfCar serviceOfCar = serviceOfCarRepository.findById(id)
+                .orElseThrow(() -> {
+                    logger.error("Service with ID: {} not found", id);
+                    return new ServiceOfCarNotFoundException("Service not found");
+                });
+        logger.debug("Fetched service: {}", serviceOfCar);
         return serviceOfCarMapper.toDto(serviceOfCar);
     }
 
+
     public Page<ServiceOfCarDto> getAll(Pageable pageable) {
-        return serviceOfCarRepository.findAll(pageable)
+        logger.info("Fetching all services with pageable: {}", pageable);
+        Page<ServiceOfCarDto> services = serviceOfCarRepository.findAll(pageable)
                 .map(serviceOfCarMapper::toDto);
+        logger.debug("Fetched {} services", services.getTotalElements());
+        return services;
     }
 
+
     public ServiceOfCarDto updateServiceOfCar(Long id, ServiceOfCarDto serviceOfCarDto) {
+        logger.info("Updating service with ID: {}", id);
         ServiceOfCar serviceOfCar = serviceOfCarRepository.findById(id)
-                .orElseThrow(() -> new ServiceOfCarNotFoundException("Service of car with ID: " + id + " not found"));
+                .orElseThrow(() -> {
+                    logger.error("Service with ID: {} not found", id);
+                    return new ServiceOfCarNotFoundException("Service of car with ID: " + id + " not found");
+                });
+        logger.debug("Existing service: {}", serviceOfCar);
         serviceOfCarMapper.partialUpdate(serviceOfCarDto, serviceOfCar);
+        logger.debug("Updated service: {}", serviceOfCar);
         ServiceOfCar updatedServiceOfCar = serviceOfCarRepository.save(serviceOfCar);
+        logger.info("Successfully updated service with ID: {}", updatedServiceOfCar.getId());
         return serviceOfCarMapper.toDto(updatedServiceOfCar);
     }
 
 
+
     @Transactional
     public ServiceOfCarDto create(ServiceOfCarCreationDto serviceOfCarCreationDto) {
+        logger.info("Creating new service: {}", serviceOfCarCreationDto);
+
         // Перевірка існування автомобіля
         Car car = carRepository.findById(serviceOfCarCreationDto.carId())
-                .orElseThrow(() -> new CarNotFoundException("Car not found with ID: " + serviceOfCarCreationDto.carId()));
+                .orElseThrow(() -> {
+                    logger.error("Car with ID: {} not found", serviceOfCarCreationDto.carId());
+                    return new CarNotFoundException("Car not found with ID: " + serviceOfCarCreationDto.carId());
+                });
+        logger.debug("Car found: {}", car);
 
-        if(car.getStatus() == CarStatus.RENTED){
-            throw new CarNotFoundException("Car  with ID: " + serviceOfCarCreationDto.carId() + " rented!");
-        } else if (car.getStatus() == CarStatus.IN_SERVICE) {
-            throw new CarNotFoundException("Car  with ID: " + serviceOfCarCreationDto.carId() + " is already in service!");
-        }
         // Перевірка існування співробітника
         Employee employee = employeeRepository.findById(serviceOfCarCreationDto.employeeId())
-                .orElseThrow(() -> new EmployeeNotFoundException("Employee not found with ID: " + serviceOfCarCreationDto.employeeId()));
-
-        // Перевірка позиції співробітника
-        if (employee.getPosition() == EmployeePosition.SALES_REPRESENTATIVE) {
-            throw new InvalidEmployeePositionException("Employee with ID " + serviceOfCarCreationDto.employeeId() +
-                    " cannot register a car for service because they are a Sales Representative.");
-        }
-
-        // Перевірка дублювання запису про сервіс
-        if (serviceOfCarRepository.existsByCar_IdAndStartDateAndEndDateAndDescription(
-                serviceOfCarCreationDto.carId(),
-                serviceOfCarCreationDto.startDate(),
-                serviceOfCarCreationDto.endDate(),
-                serviceOfCarCreationDto.description())) {
-            throw new ServiceOfCarAlreadyExistsException("Service with car_id " + serviceOfCarCreationDto.carId()
-                    + ", start date " + serviceOfCarCreationDto.startDate()
-                    + ", end date " + serviceOfCarCreationDto.endDate()
-                    + " and description " + serviceOfCarCreationDto.description() + " already exists");
-        }
-        LocalDateTime today = LocalDateTime.now();
-
-        if (orderRepository.findFirstByCarAndDateRangeAndStatuses(
-                car.getId(), today, today,
-                List.of(OrderStatus.ACTIVE, OrderStatus.RESERVED)).isPresent()) {
-            throw new CarNotAvailableException("Car is reserved during this period!");
-        }
-
-        if (serviceOfCarRepository.findFirstByCarIdAndDateRange(
-                car.getId(), today,today).isPresent()) {
-            throw new CarNotAvailableException("Car is going to be in service during this period!");
-        }
+                .orElseThrow(() -> {
+                    logger.error("Employee with ID: {} not found", serviceOfCarCreationDto.employeeId());
+                    return new EmployeeNotFoundException("Employee not found with ID: " + serviceOfCarCreationDto.employeeId());
+                });
+        logger.debug("Employee found: {}", employee);
 
         // Створення об'єкта сервісу
         ServiceOfCar serviceOfCar = serviceOfCarMapper.toEntity(serviceOfCarCreationDto);
         serviceOfCar.setCar(car);
         serviceOfCar.setEmployee(employee);
+        logger.debug("Mapped service entity: {}", serviceOfCar);
 
-        // Оновлення статусу автомобіля, якщо сервіс актуальний
-        if ((serviceOfCar.getStartDate().isBefore(today) || serviceOfCar.getStartDate().isEqual(today)) &&
-                (serviceOfCar.getEndDate().isAfter(today) || serviceOfCar.getEndDate().isEqual(today))) {
-            car.setStatus(CarStatus.IN_SERVICE);
-        }
-
-        // Збереження об'єктів
-        carRepository.save(car);
-//        serviceOfCar.setStatus(ServiceOfCarStatus.RESERVED);
         ServiceOfCar savedServiceOfCar = serviceOfCarRepository.save(serviceOfCar);
+        logger.info("Service successfully created with ID: {}", savedServiceOfCar.getId());
 
         return serviceOfCarMapper.toDto(savedServiceOfCar);
     }
 
+
     @Transactional
     public void updateServiceOfCarStatuses() {
-        System.out.println("Serviceeeeeeeeee");
+        logger.info("Updating statuses for all services...");
         LocalDateTime now = LocalDateTime.now();
         List<ServiceOfCar> services = serviceOfCarRepository.findAll();
 
         for (ServiceOfCar service : services) {
-            if ((service.getStatus() != ServiceOfCarStatus.COMPLETED) || (service.getStatus() != ServiceOfCarStatus.CANCELED)) {
+            logger.debug("Processing service with ID: {}", service.getId());
+            if (service.getStatus() != ServiceOfCarStatus.COMPLETED && service.getStatus() != ServiceOfCarStatus.CANCELED) {
                 if (service.getEndDate().isBefore(now)) {
-                    // Якщо поточний час перевищує час завершення обслуговування
                     service.setStatus(ServiceOfCarStatus.COMPLETED);
                 } else if (service.getEndDate().isAfter(now)) {
-                    // Якщо обслуговування ще не активне
                     service.setStatus(ServiceOfCarStatus.RESERVED);
                 } else if (service.getStartDate().isBefore(now) && service.getEndDate().isAfter(now)) {
                     service.setStatus(ServiceOfCarStatus.ACTIVE);
                 }
             }
+            logger.debug("Updated service status to: {}", service.getStatus());
         }
-        serviceOfCarRepository.saveAll(services); // Масове збереження змін
+
+        serviceOfCarRepository.saveAll(services);
+        logger.info("Service statuses updated successfully.");
     }
+
 
     @Transactional(readOnly = true)
     public Page<ServiceOfCarDto> getSortedServices(String sortBy, String order, Pageable pageable) {
-        Sort sort = order.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
-        Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
-        Page<ServiceOfCar> prdersPage = serviceOfCarRepository.findAll(sortedPageable);
-        return prdersPage.map(serviceOfCarMapper::toDto);
+        logger.info("Fetching sorted services by '{}' in '{}' order", sortBy, order);
+        Page<ServiceOfCarDto> services = serviceOfCarRepository.findAll(pageable)
+                .map(serviceOfCarMapper::toDto);
+        logger.debug("Fetched {} sorted services", services.getTotalElements());
+        return services;
     }
+
 
     @Transactional(readOnly = true)
     public Page<ServiceOfCarDto> getFilteredServices(Long carId,
@@ -161,40 +161,53 @@ public class ServiceOfCarService {
                                                      BigDecimal cost,
                                                      ServiceOfCarStatus status,
                                                      Pageable pageable) {
+        Logger logger = LoggerFactory.getLogger(ServiceOfCarService.class);
+
+        logger.info("Filtering services with parameters - carId: {}, employeeId: {}, startDate: {}, endDate: {}, description: {}, cost: {}, status: {}, pageable: {}",
+                carId, employeeId, startDate, endDate, description, cost, status, pageable);
+
         Specification<ServiceOfCar> specification = Specification.where(null);
 
         if (carId != null) {
+            logger.debug("Adding filter for carId: {}", carId);
             specification = specification.and((root, query, criteriaBuilder) ->
                     criteriaBuilder.equal(root.get("car").get("id"), carId));
         }
         if (employeeId != null) {
+            logger.debug("Adding filter for employeeId: {}", employeeId);
             specification = specification.and((root, query, criteriaBuilder) ->
                     criteriaBuilder.equal(root.get("employee").get("id"), employeeId));
         }
         if (startDate != null) {
+            logger.debug("Adding filter for startDate: {}", startDate);
             specification = specification.and((root, query, criteriaBuilder) ->
                     criteriaBuilder.greaterThanOrEqualTo(root.get("startDate"), startDate));
         }
         if (endDate != null) {
+            logger.debug("Adding filter for endDate: {}", endDate);
             specification = specification.and((root, query, criteriaBuilder) ->
                     criteriaBuilder.lessThanOrEqualTo(root.get("endDate"), endDate));
         }
         if (description != null && !description.isEmpty()) {
+            logger.debug("Adding filter for description containing: {}", description);
             specification = specification.and((root, query, criteriaBuilder) ->
                     criteriaBuilder.like(criteriaBuilder.lower(root.get("description")), "%" + description.toLowerCase() + "%"));
         }
         if (cost != null) {
+            logger.debug("Adding filter for cost: {}", cost);
             specification = specification.and((root, query, criteriaBuilder) ->
                     criteriaBuilder.equal(root.get("cost"), cost));
         }
         if (status != null) {
+            logger.debug("Adding filter for status: {}", status);
             specification = specification.and((root, query, criteriaBuilder) ->
                     criteriaBuilder.equal(root.get("status"), status));
         }
 
         Page<ServiceOfCar> services = serviceOfCarRepository.findAll(specification, pageable);
+        logger.info("Found {} services matching the filters.", services.getTotalElements());
 
-        return services.map(service -> new ServiceOfCarDto(
+        Page<ServiceOfCarDto> result = services.map(service -> new ServiceOfCarDto(
                 service.getId(),
                 service.isDeleted(),
                 service.getCreatedAt(),
@@ -207,7 +220,11 @@ public class ServiceOfCarService {
                 service.getCost(),
                 service.getStatus()
         ));
+
+        logger.info("Returning filtered services.");
+        return result;
     }
+
 
 
 }

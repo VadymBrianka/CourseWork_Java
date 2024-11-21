@@ -1,7 +1,8 @@
 package org.carrent.coursework.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import lombok.AllArgsConstructor;
-import org.aspectj.weaver.loadtime.Agent;
 import org.carrent.coursework.dto.CarCreationDto;
 import org.carrent.coursework.dto.CarDto;
 import org.carrent.coursework.entity.Car;
@@ -23,7 +24,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -33,14 +33,20 @@ import java.util.Optional;
 @AllArgsConstructor
 public class  CarService {
 
+    private static final Logger logger = LoggerFactory.getLogger(CarService.class);
     private final CarRepository carRepository;
     private final OrderRepository orderRepository;
     private final CarMapper carMapper;
     private final ServiceOfCarRepository serviceOfCarRepository;
 
     public CarDto getById(Long id) {
+        logger.info("Fetching car by ID: {}", id);
         Car car = carRepository.findById(id)
-                .orElseThrow(() -> new CarNotFoundException("Car not found"));
+                .orElseThrow(() -> {
+                    logger.error("Car not found with ID: {}", id);
+                    return new CarNotFoundException("Car not found");
+                });
+        logger.info("Car with ID: {} successfully fetched", id);
         return carMapper.toDto(car);
     }
 
@@ -58,14 +64,19 @@ public class  CarService {
 
     @Transactional
     public CarDto create(CarCreationDto carCreationDto) {
+        logger.info("Creating car with license plate: {}", carCreationDto.licensePlate());
         if (carRepository.existsByLicensePlate(carCreationDto.licensePlate())) {
+            logger.warn("Car with license plate {} already exists", carCreationDto.licensePlate());
             throw new CarAlreadyExistsException("Car with license plate " + carCreationDto.licensePlate() + " already exists");
         }
 
         Car car = carMapper.toEntity(carCreationDto);
-        car.setStatus(CarStatus.AVAILABLE); // Статус за замовчуванням
-        return carMapper.toDto(carRepository.save(car));
+        car.setStatus(CarStatus.AVAILABLE);
+        Car savedCar = carRepository.save(car);
+        logger.info("Car with license plate: {} created successfully", carCreationDto.licensePlate());
+        return carMapper.toDto(savedCar);
     }
+
 
     @Transactional(readOnly = true)
     public Page<CarDto> getSortedCars(String sortBy, String order, Pageable pageable) {
@@ -137,32 +148,38 @@ public class  CarService {
 
     @Transactional
     public void updateCarStatuses() {
-        System.out.println("Carrrrrrr");
+        logger.info("Updating car statuses");
         LocalDateTime now = LocalDateTime.now();
         List<Car> cars = carRepository.findAll();
-        if(!cars.isEmpty()){
-            for (Car car : cars) {
-                if (car.getStatus() == CarStatus.RENTED) {
-                    // Перевірка активних ордерів
-                    Optional<Order> activeOrder = orderRepository.findFirstByCar_IdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
-                            car.getId(), now, now);
-    //                System.out.println(activeOrder);
-                    if (activeOrder.isEmpty()) {
-                        car.setStatus(CarStatus.AVAILABLE);
-                    }
-                } else if (car.getStatus() == CarStatus.IN_SERVICE) {
-                    // Перевірка завершення сервісу
-                    Optional<ServiceOfCar> activeService = serviceOfCarRepository.findFirstByCar_IdAndEndDateGreaterThanEqual(
-                            car.getId(), now);
-    //                System.out.println(activeService);
-                    if (activeService.isEmpty()) {
-                        car.setStatus(CarStatus.AVAILABLE);
-                    }
+
+        if (cars.isEmpty()) {
+            logger.warn("No cars found to update statuses");
+            return;
+        }
+
+        for (Car car : cars) {
+            logger.info("Processing car with ID: {}", car.getId());
+            if (car.getStatus() == CarStatus.RENTED) {
+                Optional<Order> activeOrder = orderRepository.findFirstByCar_IdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        car.getId(), now, now);
+                if (activeOrder.isEmpty()) {
+                    car.setStatus(CarStatus.AVAILABLE);
+                    logger.info("Car ID: {} status changed to AVAILABLE (no active orders)", car.getId());
+                }
+            } else if (car.getStatus() == CarStatus.IN_SERVICE) {
+                Optional<ServiceOfCar> activeService = serviceOfCarRepository.findFirstByCar_IdAndEndDateGreaterThanEqual(
+                        car.getId(), now);
+                if (activeService.isEmpty()) {
+                    car.setStatus(CarStatus.AVAILABLE);
+                    logger.info("Car ID: {} status changed to AVAILABLE (service completed)", car.getId());
                 }
             }
         }
-        carRepository.saveAll(cars); // Масове збереження
+
+        carRepository.saveAll(cars);
+        logger.info("Car statuses updated successfully");
     }
+
 
 }
 
