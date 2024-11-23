@@ -1,30 +1,26 @@
 package org.carrent.coursework.service;
 
 import lombok.AllArgsConstructor;
-import org.carrent.coursework.dto.CarDto;
 import org.carrent.coursework.dto.OrderCreationDto;
 import org.carrent.coursework.dto.OrderDto;
 import org.carrent.coursework.entity.*;
 import org.carrent.coursework.enums.CarStatus;
 import org.carrent.coursework.enums.EmployeePosition;
 import org.carrent.coursework.enums.OrderStatus;
-import org.carrent.coursework.enums.ServiceOfCarStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.carrent.coursework.exception.*;
 import org.carrent.coursework.mapper.OrderMapper;
 import org.carrent.coursework.repository.*;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -59,6 +55,20 @@ public class OrderService {
     }
 
 
+    public Page<OrderDto> getAllAvailable(Pageable pageable) {
+        logger.info("Fetching all available orders with pageable: {}", pageable);
+        Page<Order> orders = orderRepository.findAll(pageable);
+        Page<OrderDto> availableOrders = orders.stream()
+                .filter(order -> !order.isDeleted())
+                .map(orderMapper::toDto)
+                .collect(Collectors.collectingAndThen(Collectors.toList(), list ->
+                        new PageImpl<>(list, pageable, orders.getTotalElements())));
+        logger.debug("Total available orders fetched: {}", availableOrders.getTotalElements());
+        return availableOrders;
+    }
+
+
+    @Transactional
     public OrderDto updateOrder(Long id, OrderDto orderDto) {
         Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -178,7 +188,6 @@ public class OrderService {
     }
 
 
-    @Transactional(readOnly = true)
     public Page<OrderDto> getSortedOrders(String sortBy, String order, Pageable pageable) {
         Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -196,7 +205,6 @@ public class OrderService {
         return ordersPage.map(orderMapper::toDto);
     }
 
-    @Transactional(readOnly = true)
     public Page<OrderDto> getFilteredOrders(Long carId,
                                             Long customerId,
                                             Long employeeId,
@@ -270,6 +278,15 @@ public class OrderService {
         });
     }
 
-
+    @Transactional
+    public String deleteOrder(Long id) {
+        logger.info("Deleting order with ID: {}", id);
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new OrderNotFoundException("Order with ID: " + id + " not found"));
+        order.setDeleted(true);
+        orderRepository.save(order);
+        logger.info("Order with ID: {} marked as deleted.", id);
+        return "Order with ID " + id + " has been deleted.";
+    }
 
 }

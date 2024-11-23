@@ -11,15 +11,13 @@ import org.carrent.coursework.mapper.EmployeeMapper;
 import org.carrent.coursework.repository.EmployeeRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -46,6 +44,17 @@ public class EmployeeService {
         return employees;
     }
 
+    public Page<EmployeeDto> getAllAvailable(Pageable pageable) {
+        logger.info("Fetching all available employees with pagination: {}", pageable);
+        Page<Employee> employees = employeeRepository.findAll(pageable);
+        logger.debug("Filtered out deleted employees from the list");
+        return employees.stream()
+                .filter(employee -> !employee.isDeleted())
+                .map(employeeMapper::toDto)
+                .collect(Collectors.collectingAndThen(Collectors.toList(), list -> new PageImpl<>(list, pageable, employees.getTotalElements())));
+    }
+
+    @Transactional
     public EmployeeDto updateEmployee(Long id, EmployeeDto employeeDto) {
         logger.info("Updating employee with ID: {}", id);
         Employee employee = employeeRepository.findById(id)
@@ -76,7 +85,6 @@ public class EmployeeService {
         return employeeMapper.toDto(savedEmployee);
     }
 
-    @Transactional(readOnly = true)
     public Page<EmployeeDto> getSortedEmployees(String sortBy, String order, Pageable pageable) {
         logger.info("Fetching sorted employees by {} in {} order", sortBy, order);
         Sort sort = order.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
@@ -86,7 +94,6 @@ public class EmployeeService {
         return employeesPage.map(employeeMapper::toDto);
     }
 
-    @Transactional(readOnly = true)
     public Page<EmployeeDto> getFilteredEmployees(String lastName, String firstName, String middleName, Date dateOfBirth,
                                                   String email, String phoneNumber, String address, EmployeePosition position,
                                                   Pageable pageable) {
@@ -137,5 +144,16 @@ public class EmployeeService {
         Page<Employee> employees = employeeRepository.findAll(specification, pageable);
         logger.info("Filtered employees fetched successfully");
         return employees.map(employeeMapper::toDto);
+    }
+
+    @Transactional
+    public String deleteEmployee(Long id) {
+        logger.info("Deleting employee with ID: {}", id);
+        Employee employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new EmployeeNotFoundException("Employee with ID: " + id + " not found"));
+        employee.setDeleted(true);
+        employeeRepository.save(employee);
+        logger.info("Employee with ID: {} has been deleted", id);
+        return "Employee with ID " + id + " has been deleted.";
     }
 }

@@ -1,24 +1,25 @@
 package org.carrent.coursework.service;
 
 import lombok.AllArgsConstructor;
+import org.carrent.coursework.dto.CarDto;
 import org.carrent.coursework.dto.CustomerCreationDto;
 import org.carrent.coursework.dto.CustomerDto;
+import org.carrent.coursework.entity.Car;
 import org.carrent.coursework.entity.Customer;
 import org.carrent.coursework.exception.CarAlreadyExistsException;
+import org.carrent.coursework.exception.CarNotFoundException;
 import org.carrent.coursework.exception.CustomerNotFoundException;
 import org.carrent.coursework.mapper.CustomerMapper;
 import org.carrent.coursework.repository.CustomerRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -47,6 +48,7 @@ public class CustomerService {
                 .map(customerMapper::toDto);
     }
 
+    @Transactional
     public CustomerDto updateCustomer(Long id, CustomerDto customerDto) {
         logger.info("Updating customer with ID: {}", id);
         Customer customer = customerRepository.findById(id)
@@ -73,7 +75,35 @@ public class CustomerService {
         return customerMapper.toDto(savedCustomer);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
+    public String deleteCustomer(Long id) {
+        logger.info("Attempting to delete customer with ID: {}", id);
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() -> {
+                    logger.error("Customer with ID: {} not found for deletion", id);
+                    return new CustomerNotFoundException("Customer with ID: " + id + " not found");
+                });
+        customer.setDeleted(true);
+        customerRepository.save(customer);
+        logger.info("Successfully marked customer with ID: {} as deleted", id);
+        return "Customer with ID " + id + " has been deleted.";
+    }
+
+    public Page<CustomerDto> getAllAvailable(Pageable pageable) {
+        logger.info("Fetching all available customers with pagination: {}", pageable);
+        Page<Customer> customers = customerRepository.findAll(pageable);
+        Page<CustomerDto> availableCustomers = customers.stream()
+                .filter(customer -> !customer.isDeleted())
+                .map(customerMapper::toDto)
+                .collect(Collectors.collectingAndThen(Collectors.toList(),
+                        list -> new PageImpl<>(list, pageable, customers.getTotalElements())));
+        logger.info("Successfully fetched {} available customers", availableCustomers.getTotalElements());
+        return availableCustomers;
+    }
+
+
+
+
     public Page<CustomerDto> getSortedCustomers(String sortBy, String order, Pageable pageable) {
         logger.info("Fetching sorted customers by {} in {} order", sortBy, order);
         Sort sort = order.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
@@ -83,7 +113,7 @@ public class CustomerService {
         return customersPage.map(customerMapper::toDto);
     }
 
-    @Transactional(readOnly = true)
+
     public Page<CustomerDto> getFilteredCustomers(String lastName, String firstName, String middleName, Date dateOfBirth,
                                                   String email, String phoneNumber, String address, String licenseNumber,
                                                   Pageable pageable) {

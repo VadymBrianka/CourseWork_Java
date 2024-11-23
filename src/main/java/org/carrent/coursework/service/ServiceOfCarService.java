@@ -20,10 +20,7 @@ import org.carrent.coursework.entity.ServiceOfCar;
 import org.carrent.coursework.mapper.ServiceOfCarMapper;
 import org.carrent.coursework.repository.OrderRepository;
 import org.carrent.coursework.repository.ServiceOfCarRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
@@ -31,6 +28,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -40,11 +38,10 @@ public class ServiceOfCarService {
     private static final Logger logger = LoggerFactory.getLogger(ServiceOfCarService.class);
 
     private final ServiceOfCarRepository serviceOfCarRepository;
-    private CarRepository carRepository;
-    private EmployeeRepository employeeRepository;
-    OrderRepository orderRepository;
+    private final CarRepository carRepository;
+    private final EmployeeRepository employeeRepository;
+    private final OrderRepository orderRepository;
     private final ServiceOfCarMapper serviceOfCarMapper;
-
 
     public ServiceOfCarDto getById(Long id) {
         logger.info("Fetching service by ID: {}", id);
@@ -57,7 +54,6 @@ public class ServiceOfCarService {
         return serviceOfCarMapper.toDto(serviceOfCar);
     }
 
-
     public Page<ServiceOfCarDto> getAll(Pageable pageable) {
         logger.info("Fetching all services with pageable: {}", pageable);
         Page<ServiceOfCarDto> services = serviceOfCarRepository.findAll(pageable)
@@ -66,7 +62,7 @@ public class ServiceOfCarService {
         return services;
     }
 
-
+    @Transactional
     public ServiceOfCarDto updateServiceOfCar(Long id, ServiceOfCarDto serviceOfCarDto) {
         logger.info("Updating service with ID: {}", id);
         ServiceOfCar serviceOfCar = serviceOfCarRepository.findById(id)
@@ -82,13 +78,10 @@ public class ServiceOfCarService {
         return serviceOfCarMapper.toDto(updatedServiceOfCar);
     }
 
-
-
     @Transactional
     public ServiceOfCarDto create(ServiceOfCarCreationDto serviceOfCarCreationDto) {
         logger.info("Creating new service: {}", serviceOfCarCreationDto);
 
-        // Перевірка існування автомобіля
         Car car = carRepository.findById(serviceOfCarCreationDto.carId())
                 .orElseThrow(() -> {
                     logger.error("Car with ID: {} not found", serviceOfCarCreationDto.carId());
@@ -96,7 +89,6 @@ public class ServiceOfCarService {
                 });
         logger.debug("Car found: {}", car);
 
-        // Перевірка існування співробітника
         Employee employee = employeeRepository.findById(serviceOfCarCreationDto.employeeId())
                 .orElseThrow(() -> {
                     logger.error("Employee with ID: {} not found", serviceOfCarCreationDto.employeeId());
@@ -104,7 +96,6 @@ public class ServiceOfCarService {
                 });
         logger.debug("Employee found: {}", employee);
 
-        // Створення об'єкта сервісу
         ServiceOfCar serviceOfCar = serviceOfCarMapper.toEntity(serviceOfCarCreationDto);
         serviceOfCar.setCar(car);
         serviceOfCar.setEmployee(employee);
@@ -116,12 +107,12 @@ public class ServiceOfCarService {
         return serviceOfCarMapper.toDto(savedServiceOfCar);
     }
 
-
     @Transactional
     public void updateServiceOfCarStatuses() {
         logger.info("Updating statuses for all services...");
         LocalDateTime now = LocalDateTime.now();
         List<ServiceOfCar> services = serviceOfCarRepository.findAll();
+        logger.debug("Total services to process: {}", services.size());
 
         for (ServiceOfCar service : services) {
             logger.debug("Processing service with ID: {}", service.getId());
@@ -141,8 +132,6 @@ public class ServiceOfCarService {
         logger.info("Service statuses updated successfully.");
     }
 
-
-    @Transactional(readOnly = true)
     public Page<ServiceOfCarDto> getSortedServices(String sortBy, String order, Pageable pageable) {
         logger.info("Fetching sorted services by '{}' in '{}' order", sortBy, order);
         Page<ServiceOfCarDto> services = serviceOfCarRepository.findAll(pageable)
@@ -151,23 +140,14 @@ public class ServiceOfCarService {
         return services;
     }
 
-
-    @Transactional(readOnly = true)
-    public Page<ServiceOfCarDto> getFilteredServices(Long carId,
-                                                     Long employeeId,
-                                                     LocalDateTime startDate,
-                                                     LocalDateTime endDate,
-                                                     String description,
-                                                     BigDecimal cost,
-                                                     ServiceOfCarStatus status,
-                                                     Pageable pageable) {
-        Logger logger = LoggerFactory.getLogger(ServiceOfCarService.class);
-
+    public Page<ServiceOfCarDto> getFilteredServices(Long carId, Long employeeId, LocalDateTime startDate, LocalDateTime endDate,
+                                                     String description, BigDecimal cost, ServiceOfCarStatus status, Pageable pageable) {
         logger.info("Filtering services with parameters - carId: {}, employeeId: {}, startDate: {}, endDate: {}, description: {}, cost: {}, status: {}, pageable: {}",
                 carId, employeeId, startDate, endDate, description, cost, status, pageable);
 
         Specification<ServiceOfCar> specification = Specification.where(null);
 
+        // Add filter specifications with logging
         if (carId != null) {
             logger.debug("Adding filter for carId: {}", carId);
             specification = specification.and((root, query, criteriaBuilder) ->
@@ -225,6 +205,29 @@ public class ServiceOfCarService {
         return result;
     }
 
+    @Transactional
+    public String deleteService(Long id) {
+        logger.info("Deleting service with ID: {}", id);
+        ServiceOfCar service = serviceOfCarRepository.findById(id)
+                .orElseThrow(() -> {
+                    logger.error("Service with ID: {} not found", id);
+                    return new ServiceOfCarNotFoundException("Service with ID: " + id + " not found");
+                });
+        service.setDeleted(true);
+        serviceOfCarRepository.save(service);
+        logger.info("Service with ID: {} marked as deleted.", id);
+        return "Order with ID " + id + " has been deleted.";
+    }
 
-
+    public Page<ServiceOfCarDto> getAllAvailable(Pageable pageable) {
+        logger.info("Fetching all available services...");
+        Page<ServiceOfCar> services = serviceOfCarRepository.findAll(pageable);
+        logger.debug("Total services fetched: {}", services.getTotalElements());
+        Page<ServiceOfCarDto> availableServices = services.stream()
+                .filter(service -> !service.isDeleted())
+                .map(serviceOfCarMapper::toDto)
+                .collect(Collectors.collectingAndThen(Collectors.toList(), list -> new PageImpl<>(list, pageable, services.getTotalElements())));
+        logger.info("Filtered {} available services.", availableServices.getTotalElements());
+        return availableServices;
+    }
 }

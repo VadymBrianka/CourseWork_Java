@@ -1,7 +1,12 @@
 package org.carrent.coursework.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.carrent.coursework.dto.CustomerDto;
 import org.carrent.coursework.dto.EmployeeCreationDto;
 import org.carrent.coursework.dto.EmployeeDto;
 import org.carrent.coursework.enums.EmployeePosition;
@@ -27,36 +32,70 @@ import java.util.Map;
 public class EmployeeController {
     private final EmployeeService employeeService;
 
+    @Operation(
+            summary = "Get employee by ID",
+            description = "Fetches employee details based on the provided ID",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully fetched employee",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = EmployeeDto.class))),
+                    @ApiResponse(responseCode = "404", description = "Employee not found")
+            }
+    )
     @GetMapping("{id}")
     @Cacheable(value = "employees", key = "#id")
     public ResponseEntity<EmployeeDto> getEmployeeById(@PathVariable Long id) {
         return ResponseEntity.ok(employeeService.getById(id));
     }
 
+    @Operation(
+            summary = "Get all employees",
+            description = "Fetches all employees with pagination and sorting options",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully fetched employees",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Page.class))),
+                    @ApiResponse(responseCode = "400", description = "Invalid request parameters")
+            }
+    )
     @GetMapping
     @Cacheable(value = "employees")
     public ResponseEntity<Page<EmployeeDto>> getAllEmployees(
-            @RequestParam(defaultValue = "0") int page,        // Номер сторінки
-            @RequestParam(defaultValue = "10") int size,       // Розмір сторінки
-            @RequestParam(defaultValue = "id") String sortBy,  // Поле сортування
-            @RequestParam(defaultValue = "asc") String order   // Порядок сортування
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String order
     ) {
-        // Налаштовуємо пагінацію та сортування
         Sort sort = order.equalsIgnoreCase("desc")
                 ? Sort.by(sortBy).descending()
                 : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
-
-        // Повертаємо сторінковий результат
         return ResponseEntity.ok(employeeService.getAll(pageable));
     }
 
+    @Operation(
+            summary = "Create a new employee",
+            description = "Creates a new employee and saves it to the database",
+            responses = {
+                    @ApiResponse(responseCode = "201", description = "Employee successfully created",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = EmployeeDto.class))),
+                    @ApiResponse(responseCode = "400", description = "Invalid input data")
+            }
+    )
     @PostMapping
     @CacheEvict(value = "employees", allEntries = true)
     public ResponseEntity<EmployeeDto> createEmployee(@Valid @RequestBody EmployeeCreationDto employeeCreationDto) {
         return new ResponseEntity<>(employeeService.create(employeeCreationDto), HttpStatus.CREATED);
     }
 
+    @Operation(
+            summary = "Update an existing employee",
+            description = "Updates details of an existing employee based on the provided ID",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Employee successfully updated",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = EmployeeDto.class))),
+                    @ApiResponse(responseCode = "404", description = "Employee not found"),
+                    @ApiResponse(responseCode = "400", description = "Invalid input data")
+            }
+    )
     @PutMapping("{id}")
     @CacheEvict(value = "employees", allEntries = true)
     public ResponseEntity<EmployeeDto> updateEmployee(
@@ -66,8 +105,21 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeService.updateEmployee(id, employeeDto));
     }
 
+    @Operation(
+            summary = "Get sorted employees",
+            description = "Fetches employees sorted by a specified field and order",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully fetched sorted employees",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Page.class))),
+                    @ApiResponse(responseCode = "404", description = "No employees found")
+            }
+    )
     @GetMapping("/sort")
-    public ResponseEntity<?> getSortedEmployees(@RequestParam String sortBy, @RequestParam String order, @PageableDefault Pageable pageable) {
+    public ResponseEntity<?> getSortedEmployees(
+            @RequestParam String sortBy,
+            @RequestParam String order,
+            @PageableDefault Pageable pageable
+    ) {
         Page<EmployeeDto> sortedEmployees = employeeService.getSortedEmployees(sortBy, order, pageable);
         if (sortedEmployees.isEmpty()) {
             return new ResponseEntity<>("No employees found.", HttpStatus.NOT_FOUND);
@@ -75,6 +127,15 @@ public class EmployeeController {
         return new ResponseEntity<>(sortedEmployees, HttpStatus.OK);
     }
 
+    @Operation(
+            summary = "Filter employees",
+            description = "Fetches employees based on provided filter criteria",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully fetched filtered employees",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Page.class))),
+                    @ApiResponse(responseCode = "404", description = "No employees found")
+            }
+    )
     @GetMapping("/filter")
     public ResponseEntity<?> getFilteredEmployees(
             @RequestParam(required = false) String lastName,
@@ -85,17 +146,36 @@ public class EmployeeController {
             @RequestParam(required = false) String phoneNumber,
             @RequestParam(required = false) String address,
             @RequestParam(required = false) EmployeePosition position,
-            @PageableDefault Pageable pageable) {
-
+            @PageableDefault Pageable pageable
+    ) {
         Page<EmployeeDto> filteredEmployees = employeeService.getFilteredEmployees(
                 lastName, firstName, middleName, dateOfBirth, email, phoneNumber, address, position, pageable);
-
         if (!filteredEmployees.hasContent()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("message", "No employees found."));
         }
-
         return ResponseEntity.ok(filteredEmployees);
     }
 
+    @DeleteMapping("/{id}")
+    @CacheEvict(value = "employees", allEntries = true)
+    public ResponseEntity<String> deleteEmployee(@PathVariable Long id) {
+        return ResponseEntity.ok(employeeService.deleteEmployee(id));
+    }
+
+    @GetMapping("/available")
+    @Cacheable(value = "employees")
+    public ResponseEntity<Page<EmployeeDto>> getAllEmployeesAvailable(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String order
+    ) {
+        Sort sort = order.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<EmployeeDto> employees = employeeService.getAllAvailable(pageable);
+        return ResponseEntity.ok(employees);
+    }
 }

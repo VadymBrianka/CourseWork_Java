@@ -15,10 +15,7 @@ import org.carrent.coursework.repository.CarRepository;
 import org.carrent.coursework.repository.OrderRepository;
 import org.carrent.coursework.mapper.CarMapper;
 import org.carrent.coursework.repository.ServiceOfCarRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,11 +24,12 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
 @AllArgsConstructor
-public class  CarService {
+public class CarService {
 
     private static final Logger logger = LoggerFactory.getLogger(CarService.class);
     private final CarRepository carRepository;
@@ -51,15 +49,43 @@ public class  CarService {
     }
 
     public Page<CarDto> getAll(Pageable pageable) {
-        return carRepository.findAll(pageable) // Використовуємо пагінацію
-                .map(carMapper::toDto); // Перетворюємо кожен Car в CarDto
+        logger.info("Fetching all cars with pagination: {}", pageable);
+        return carRepository.findAll(pageable)
+                .map(carMapper::toDto);
     }
 
+    public Page<CarDto> getAllAvailable(Pageable pageable) {
+        logger.info("Fetching all available cars with pagination: {}", pageable);
+        Page<Car> cars = carRepository.findAll(pageable);
+        logger.info("Fetched {} cars for filtering available ones", cars.getTotalElements());
+        return cars.stream()
+                .filter(car -> !car.isDeleted())
+                .map(carMapper::toDto)
+                .collect(Collectors.collectingAndThen(Collectors.toList(),
+                        list -> new PageImpl<>(list, pageable, cars.getTotalElements())));
+    }
+
+    @Transactional
     public CarDto updateCar(Long id, CarDto carDto) {
+        logger.info("Updating car with ID: {}", id);
         Car car = carRepository.findById(id)
                 .orElseThrow(() -> new CarNotFoundException("Car with ID: " + id + " not found"));
+        logger.info("Car found: {}", car);
         carMapper.partialUpdate(carDto, car);
-        return carMapper.toDto(carRepository.save(car));
+        Car updatedCar = carRepository.save(car);
+        logger.info("Car with ID: {} successfully updated", id);
+        return carMapper.toDto(updatedCar);
+    }
+
+    @Transactional
+    public String deleteCar(Long id) {
+        logger.info("Deleting car with ID: {}", id);
+        Car car = carRepository.findById(id)
+                .orElseThrow(() -> new CarNotFoundException("Car with ID: " + id + " not found"));
+        car.setDeleted(true);
+        carRepository.save(car);
+        logger.info("Car with ID: {} marked as deleted", id);
+        return "Car with ID " + id + " has been deleted.";
     }
 
     @Transactional
@@ -77,24 +103,20 @@ public class  CarService {
         return carMapper.toDto(savedCar);
     }
 
-
-    @Transactional(readOnly = true)
     public Page<CarDto> getSortedCars(String sortBy, String order, Pageable pageable) {
+        logger.info("Fetching sorted cars by {} in {} order", sortBy, order);
         Sort sort = order.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
         Page<Car> carsPage = carRepository.findAll(sortedPageable);
+        logger.info("Fetched {} cars", carsPage.getTotalElements());
         return carsPage.map(carMapper::toDto);
     }
 
-    @Transactional(readOnly = true)
-    public Page<CarDto> getFilteredCars(String brand,
-                                        String model,
-                                        Integer year,
-                                        String licensePlate,
-                                        CarStatus status,
-                                        Long mileage,
-                                        BigDecimal price,
-                                        Pageable pageable) {
+    public Page<CarDto> getFilteredCars(String brand, String model, Integer year, String licensePlate,
+                                        CarStatus status, Long mileage, BigDecimal price, Pageable pageable) {
+        logger.info("Fetching filtered cars with parameters: brand={}, model={}, year={}, licensePlate={}, status={}, mileage={}, price={}",
+                brand, model, year, licensePlate, status, mileage, price);
+
         Specification<Car> specification = Specification.where(null);
 
         if (brand != null && !brand.isEmpty()) {
@@ -111,40 +133,26 @@ public class  CarService {
         }
         if (year != null) {
             specification = specification.and((root, query, criteriaBuilder) ->
-                    criteriaBuilder.equal(root.get("year"), year));  // Використовуємо equal замість like
+                    criteriaBuilder.equal(root.get("year"), year));
         }
         if (mileage != null) {
             specification = specification.and((root, query, criteriaBuilder) ->
-                    criteriaBuilder.equal(root.get("mileage"), mileage));  // Використовуємо equal замість like
+                    criteriaBuilder.equal(root.get("mileage"), mileage));
         }
         if (price != null) {
             specification = specification.and((root, query, criteriaBuilder) ->
-                    criteriaBuilder.equal(root.get("price"), price));  // Використовуємо equal замість like
+                    criteriaBuilder.equal(root.get("price"), price));
         }
         if (status != null) {
             specification = specification.and((root, query, criteriaBuilder) ->
                     criteriaBuilder.equal(root.get("status"), status));
         }
 
-        // Отримуємо сторінку автомобілів за специфікацією
         Page<Car> cars = carRepository.findAll(specification, pageable);
+        logger.info("Fetched {} cars with applied filters", cars.getTotalElements());
 
-        // Створюємо Page<CarDto> та перетворюємо кожен Car в CarDto
-        return cars.map(car -> new CarDto(
-                car.getId(),
-                car.isDeleted(),
-                car.getCreatedAt(),
-                car.getUpdatedAt(),
-                car.getBrand(),
-                car.getModel(),
-                car.getYear(),
-                car.getLicensePlate(),
-                car.getStatus(),
-                car.getMileage(),
-                car.getPrice()
-        ));
+        return cars.map(carMapper::toDto);
     }
-
 
     @Transactional
     public void updateCarStatuses() {
@@ -179,7 +187,4 @@ public class  CarService {
         carRepository.saveAll(cars);
         logger.info("Car statuses updated successfully");
     }
-
-
 }
-
