@@ -27,12 +27,17 @@ public interface ServiceOfCarRepository extends JpaRepository<ServiceOfCar, Long
 
     @Query("SELECT s FROM ServiceOfCar s " +
             "WHERE s.car.id = :carId " +
-            "AND (s.endDate > :endDate OR s.startDate < :startDate) " +
-            "ORDER BY s.id ASC")
-    Optional<ServiceOfCar> findFirstByCarIdAndDateRange(
+            "AND s.status IN :statuses " +
+            "AND (" +
+            "   (s.startDate <= :startDate AND s.endDate >= :endDate)" + // Перекриття
+            "   OR (s.startDate BETWEEN :startDate AND :endDate)" + // Початок під час нового запису
+            "   OR (s.endDate BETWEEN :startDate AND :endDate)" + // Кінець під час нового запису
+            ")")
+    Optional<ServiceOfCar> findFirstByCarAndDateRangeAndStatuses(
             @Param("carId") Long carId,
+            @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
-            @Param("startDate") LocalDateTime startDate);
+            @Param("statuses") List<ServiceOfCarStatus> statuses);
 
 
 

@@ -27,13 +27,16 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
 
     @Query("SELECT o FROM Order o " +
             "WHERE o.car.id = :carId " +
-            "AND o.startDate <= :endDate " +
-            "AND o.endDate >= :startDate " +
-            "AND o.status IN :statuses")
+            "AND o.status IN :statuses " +
+            "AND (" +
+            "   (o.startDate <= :startDate AND o.endDate >= :endDate)" + // Перекриття
+            "   OR (o.startDate BETWEEN :startDate AND :endDate)" + // Початок під час нового запису
+            "   OR (o.endDate BETWEEN :startDate AND :endDate)" + // Кінець під час нового запису
+            ")")
     Optional<Order> findFirstByCarAndDateRangeAndStatuses(
             @Param("carId") Long carId,
-            @Param("endDate") LocalDateTime endDate,
             @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
             @Param("statuses") List<OrderStatus> statuses);
 
 

@@ -29,7 +29,9 @@ public class RestResponseEntityExceptionHandler extends ResponseEntityExceptionH
             ServiceOfCarAlreadyExistsException.class,
             InvalidEmployeePositionException.class,
             EmployeePositionNotAllowedException.class,
-            CarNotAvailableException.class})
+            CarNotAvailableException.class,
+            UserAlreadyExistsException.class,
+    UserNotFoundException.class})
     protected ResponseEntity<Object> handleNotFoundException(RuntimeException ex, WebRequest request) {
         Map<String, Object> body = new HashMap<>();
 

@@ -1,16 +1,13 @@
 package org.carrent.coursework.service;
 
 import lombok.AllArgsConstructor;
-import org.carrent.coursework.dto.OrderDto;
 import org.carrent.coursework.dto.ServiceOfCarCreationDto;
 import org.carrent.coursework.dto.ServiceOfCarDto;
 import org.carrent.coursework.entity.Car;
-import org.carrent.coursework.entity.Order;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.carrent.coursework.enums.CarStatus;
 import org.carrent.coursework.enums.EmployeePosition;
 import org.carrent.coursework.enums.OrderStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.carrent.coursework.enums.ServiceOfCarStatus;
 import org.carrent.coursework.exception.*;
 import org.carrent.coursework.repository.CarRepository;
@@ -95,6 +92,28 @@ public class ServiceOfCarService {
                     return new EmployeeNotFoundException("Employee not found with ID: " + serviceOfCarCreationDto.employeeId());
                 });
         logger.debug("Employee found: {}", employee);
+
+        // Validate employee position
+        if (employee.getPosition() == EmployeePosition.SALES_REPRESENTATIVE) {
+            logger.error("Technicians cannot create orders. Employee ID: {}", serviceOfCarCreationDto.employeeId());
+            throw new EmployeePositionNotAllowedException("Technicians cannot create orders");
+        }
+
+        //         Additional validations
+        logger.debug("Validating order constraints for car ID: {}", serviceOfCarCreationDto.carId());
+        if (orderRepository.findFirstByCarAndDateRangeAndStatuses(
+                car.getId(), serviceOfCarCreationDto.startDate(), serviceOfCarCreationDto.endDate(),
+                List.of(OrderStatus.ACTIVE, OrderStatus.RESERVED)).isPresent()) {
+            logger.error("Car is reserved during this period: Car ID: {}", serviceOfCarCreationDto.carId());
+            throw new CarNotAvailableException("Car is reserved during this period!");
+        }
+        logger.debug("Validating service constraints for car ID: {}", serviceOfCarCreationDto.carId());
+        if (serviceOfCarRepository.findFirstByCarAndDateRangeAndStatuses(
+                car.getId(), serviceOfCarCreationDto.startDate(), serviceOfCarCreationDto.endDate(),
+                List.of(ServiceOfCarStatus.ACTIVE, ServiceOfCarStatus.RESERVED)).isPresent()) {
+            logger.error("Car is going to be in service during this period: Car ID: {}", serviceOfCarCreationDto.carId());
+            throw new CarNotAvailableException("Car is going to be in service during this period!");
+        }
 
         ServiceOfCar serviceOfCar = serviceOfCarMapper.toEntity(serviceOfCarCreationDto);
         serviceOfCar.setCar(car);

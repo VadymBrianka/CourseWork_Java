@@ -9,7 +9,9 @@ import java.util.Date;
 /**
  * DTO for {@link org.carrent.coursework.entity.Employee}
  */
-public record EmployeeCreationDto(boolean deleted, Date createdAt, Date updatedAt,
+public record EmployeeCreationDto(boolean deleted,
+                                  Date createdAt,
+                                  Date updatedAt,
                                   @NotNull @Size(max = 255) @NotEmpty @NotBlank String lastName,
                                   @NotNull @Size(max = 255) @NotEmpty @NotBlank String firstName,
                                   @NotNull @Size(max = 255) @NotEmpty @NotBlank String middleName,

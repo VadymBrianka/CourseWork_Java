@@ -7,6 +7,7 @@ import org.carrent.coursework.entity.*;
 import org.carrent.coursework.enums.CarStatus;
 import org.carrent.coursework.enums.EmployeePosition;
 import org.carrent.coursework.enums.OrderStatus;
+import org.carrent.coursework.enums.ServiceOfCarStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.carrent.coursework.exception.*;
@@ -131,15 +132,23 @@ public class OrderService {
                     return new CustomerNotFoundException("Customer not found with ID: " + orderDto.customerId());
                 });
 
-        // Additional validations
+//         Additional validations
         logger.debug("Validating order constraints for car ID: {}", orderDto.carId());
-        LocalDateTime today = LocalDateTime.now();
         if (orderRepository.findFirstByCarAndDateRangeAndStatuses(
-                car.getId(), today, today,
+                car.getId(), orderDto.startDate(), orderDto.endDate(),
                 List.of(OrderStatus.ACTIVE, OrderStatus.RESERVED)).isPresent()) {
             logger.error("Car is reserved during this period: Car ID: {}", orderDto.carId());
             throw new CarNotAvailableException("Car is reserved during this period!");
         }
+        logger.debug("Validating service constraints for car ID: {}", orderDto.carId());
+        if (serviceOfCarRepository.findFirstByCarAndDateRangeAndStatuses(
+                car.getId(), orderDto.startDate(), orderDto.endDate(),
+                List.of(ServiceOfCarStatus.ACTIVE, ServiceOfCarStatus.RESERVED)).isPresent()) {
+            logger.error("Car is going to be in service during this period: Car ID: {}", orderDto.carId());
+            throw new CarNotAvailableException("Car is going to be in service during this period!");
+        }
+
+
 
         logger.debug("Mapping DTO to entity for order creation");
         Order order = orderMapper.toEntity(orderDto);
@@ -150,6 +159,8 @@ public class OrderService {
         logger.debug("Saving order to the database");
         Order savedOrder = orderRepository.save(order);
 
+
+        LocalDateTime today = LocalDateTime.now();
         // Update car status
         if ((order.getStartDate().isBefore(today) || order.getStartDate().isEqual(today)) &&
                 (order.getEndDate().isAfter(today) || order.getEndDate().isEqual(today))) {
