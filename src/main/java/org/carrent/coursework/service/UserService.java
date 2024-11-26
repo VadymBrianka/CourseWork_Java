@@ -4,14 +4,11 @@ import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.carrent.coursework.dto.UserCreationDto;
 import org.carrent.coursework.dto.UserDto;
-import org.carrent.coursework.entity.Employee;
 import org.carrent.coursework.entity.User;
 import org.carrent.coursework.exception.UserAlreadyExistsException;
 import org.carrent.coursework.exception.UserNotFoundException;
-import org.carrent.coursework.repository.EmployeeRepository;
 import org.carrent.coursework.enums.Role;
 import org.carrent.coursework.mapper.UserMapper;
-import org.carrent.coursework.repository.EmployeeRepository;
 import org.carrent.coursework.repository.UserRepository;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
@@ -34,7 +31,6 @@ import java.time.LocalDate;
 public class UserService {
     private UserRepository userRepository;
     private UserMapper userMapper;
-    private EmployeeRepository employeeRepository;
 
     @Transactional
     @Cacheable
@@ -45,15 +41,7 @@ public class UserService {
 
     @Transactional
     public UserDto createUser(UserCreationDto userDto) {
-        String email = userDto.email();
-        String phoneNumber = userDto.phoneNumber();
         User user = userMapper.toEntity(userDto);
-        if(userRepository.existsByEmail(email)) {
-            throw new UserAlreadyExistsException("User with email " + email + " already exists");
-        }
-        if(userRepository.existsByPhoneNumber(phoneNumber)) {
-            throw new UserAlreadyExistsException("User with phone number " + phoneNumber + " already exists");
-        }
         if(userRepository.existsByUsername(userDto.username())) {
             throw new UserAlreadyExistsException("User with username " + userDto.username() + " already exists");
         }
@@ -156,32 +144,12 @@ public class UserService {
 //    }
 
     @Transactional
-    public Page<UserDto> getFilteredUsers(Long id, LocalDate birthDate, String phoneNumber, String firstName, String surname, String email, String role, Pageable pageable) {
+    public Page<UserDto> getFilteredUsers(Long id, String role, Pageable pageable) {
         Specification<User> specification = Specification.where(null);
 
         if (id != null) {
             specification = specification.and((root, query, criteriaBuilder) ->
                     criteriaBuilder.like(root.get("id"), "%" + id + "%"));
-        }
-        if(birthDate != null) {
-            specification = specification.and((root, query, criteriaBuilder) ->
-                    criteriaBuilder.like(criteriaBuilder.lower(root.get("birthDate")), "%" + birthDate + "%"));
-        }
-        if (phoneNumber != null) {
-            specification = specification.and((root, query, criteriaBuilder) ->
-                    criteriaBuilder.like(root.get("phoneNumber"), "%" + phoneNumber + "%"));
-        }
-        if(firstName != null && !firstName.isEmpty()) {
-            specification = specification.and((root, query, criteriaBuilder) ->
-                    criteriaBuilder.like(criteriaBuilder.lower(root.get("firstName")), "%" + firstName.toLowerCase() + "%"));
-        }
-        if(surname != null && !surname.isEmpty()) {
-            specification = specification.and((root, query, criteriaBuilder) ->
-                    criteriaBuilder.like(criteriaBuilder.lower(root.get("surname")), "%" + surname.toLowerCase() + "%"));
-        }
-        if(email != null && !email.isEmpty()) {
-            specification = specification.and((root, query, criteriaBuilder) ->
-                    criteriaBuilder.like(criteriaBuilder.lower(root.get("email")), "%" + email.toLowerCase() + "%"));
         }
         if(role != null) {
             specification = specification.and((root, query, criteriaBuilder) ->

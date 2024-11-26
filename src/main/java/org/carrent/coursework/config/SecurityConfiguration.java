@@ -3,7 +3,6 @@ package org.carrent.coursework.config;
 import lombok.RequiredArgsConstructor;
 import org.carrent.coursework.entity.JwtAuthenticationFilter;
 import org.carrent.coursework.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -54,6 +53,7 @@ public class SecurityConfiguration {
                                 "/v3/api-docs/**",
                                 "/webjars/**",
                                 "/api-docs/**",
+                                "/api-docs",
                                 "http://localhost:8080/api-docs").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
