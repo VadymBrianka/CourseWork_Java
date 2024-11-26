@@ -56,6 +56,7 @@ public class SecurityConfiguration {
                                 "/api-docs",
                                 "http://localhost:8080/api-docs").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/users/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .sessionManagement(manager -> manager.sessionCreationPolicy(STATELESS))
                 .authenticationProvider(authenticationProvider())

@@ -24,7 +24,8 @@ public class MultiLevelCacheResolver implements CacheResolver {
                         localCacheManager.getCache("customers"),
                         localCacheManager.getCache("employees"),
                         localCacheManager.getCache("orders"),
-                        localCacheManager.getCache("services")
+                        localCacheManager.getCache("services"),
+                        localCacheManager.getCache("users")
                 )
                 .filter(Objects::nonNull)
                 .toList();

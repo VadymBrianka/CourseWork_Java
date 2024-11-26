@@ -1,6 +1,7 @@
 package org.carrent.coursework.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -159,10 +160,45 @@ public class EmployeeController {
 
     @DeleteMapping("/{id}")
     @CacheEvict(value = "employees", allEntries = true)
+    @Operation(
+            summary = "Delete an employee by ID",
+            description = "Deletes an employee from the database using the specified ID. Also clears the cache associated with the list of employees.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Employee successfully deleted",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = String.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Employee with the specified ID not found",
+                            content = @Content(mediaType = "application/json")
+                    )
+            },
+            parameters = {
+                    @Parameter(
+                            name = "id",
+                            description = "The ID of the employee to delete",
+                            required = true,
+                            example = "789"
+                    )
+            }
+    )
     public ResponseEntity<String> deleteEmployee(@PathVariable Long id) {
         return ResponseEntity.ok(employeeService.deleteEmployee(id));
     }
 
+
+
+    @Operation(
+            summary = "Get all available employees",
+            description = "Retrieves a paginated list of available employees with optional sorting.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully fetched list of available employees",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = Page.class))),
+            }
+    )
     @GetMapping("/available")
     @Cacheable(value = "employees")
     public ResponseEntity<Page<EmployeeDto>> getAllEmployeesAvailable(

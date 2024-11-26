@@ -1,6 +1,7 @@
 package org.carrent.coursework.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -71,6 +72,16 @@ public class CarController {
         return ResponseEntity.ok(cars);
     }
 
+
+    @Operation(
+            summary = "Get all available cars",
+            description = "Retrieves a paginated list of available cars with optional sorting.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully fetched list of available cars",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = Page.class))),
+            }
+    )
     @GetMapping("/available")
     @Cacheable(value = "cars")
     public ResponseEntity<Page<CarDto>> getAllCarsAvailable(
@@ -170,9 +181,35 @@ public class CarController {
 
     @DeleteMapping("/{id}")
     @CacheEvict(value = "cars", allEntries = true)
+    @Operation(
+            summary = "Delete a car by ID",
+            description = "Deletes a car from the database using the specified ID. Also clears the cache associated with the list of cars.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Car successfully deleted",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = String.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Car with the specified ID not found",
+                            content = @Content(mediaType = "application/json")
+                    )
+            },
+            parameters = {
+                    @Parameter(
+                            name = "id",
+                            description = "The ID of the car to delete",
+                            required = true,
+                            example = "123"
+                    )
+            }
+    )
     public ResponseEntity<String> deleteCar(@PathVariable Long id) {
         return ResponseEntity.ok(carService.deleteCar(id));
     }
+
+
 
 }
 

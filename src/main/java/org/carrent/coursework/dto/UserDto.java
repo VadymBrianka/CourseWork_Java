@@ -14,12 +14,5 @@ public record UserDto(Long id,
                       Date updatedAt,
                       String username,
                       String password,
-                      Role role
-        /*@Nullable LocalDate hireDate,
-        @Nullable String position*/) implements Serializable {
-//    /**
-//     * DTO for {@link org.carrent.coursework.entity.InsurancePolicy}
-//     */
-//    public record InsurancePolicyDto1(Long id, String policyNumber) implements Serializable {
-//    }
+                      Role role) implements Serializable {
 }

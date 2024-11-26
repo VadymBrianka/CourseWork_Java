@@ -1,6 +1,7 @@
 package org.carrent.coursework.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -197,10 +198,46 @@ public class OrderController {
 
     @DeleteMapping("/{id}")
     @CacheEvict(value = "order", allEntries = true)
+    @Operation(
+            summary = "Delete an order by ID",
+            description = "Deletes an order from the database using the specified ID. Also clears the cache associated with the orders.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Order successfully deleted",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = String.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Order with the specified ID not found",
+                            content = @Content(mediaType = "application/json")
+                    )
+            },
+            parameters = {
+                    @Parameter(
+                            name = "id",
+                            description = "The ID of the order to delete",
+                            required = true,
+                            example = "101"
+                    )
+            }
+    )
     public ResponseEntity<String> deleteOrder(@PathVariable Long id) {
         return ResponseEntity.ok(orderService.deleteOrder(id));
     }
 
+
+
+
+    @Operation(
+            summary = "Get all available orders",
+            description = "Retrieves a paginated list of available orders with optional sorting.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully fetched list of available orders",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = Page.class))),
+            }
+    )
     @GetMapping("/available")
     @Cacheable(value = "orders")
     public ResponseEntity<Page<OrderDto>> getAllOrdersAvailable(

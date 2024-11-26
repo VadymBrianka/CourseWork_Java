@@ -1,6 +1,7 @@
 package org.carrent.coursework.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -205,10 +206,44 @@ public class ServiceOfCarController {
 
     @DeleteMapping("/{id}")
     @CacheEvict(value = "service", allEntries = true)
+    @Operation(
+            summary = "Delete a service by ID",
+            description = "Deletes a service record from the database using the specified ID. Also clears the cache associated with the list of services.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Service successfully deleted",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = String.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Service with the specified ID not found",
+                            content = @Content(mediaType = "application/json")
+                    )
+            },
+            parameters = {
+                    @Parameter(
+                            name = "id",
+                            description = "The ID of the service to delete",
+                            required = true,
+                            example = "567"
+                    )
+            }
+    )
     public ResponseEntity<String> deleteService(@PathVariable Long id) {
         return ResponseEntity.ok(serviceOfCarService.deleteService(id));
     }
 
+
+    @Operation(
+            summary = "Get all available services",
+            description = "Retrieves a paginated list of available services with optional sorting.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully fetched list of available services",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = Page.class))),
+            }
+    )
     @GetMapping("/available")
     @Cacheable(value = "services")
     public ResponseEntity<Page<ServiceOfCarDto>> getAllServicesAvailable(

@@ -1,6 +1,7 @@
 package org.carrent.coursework.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -155,10 +156,45 @@ public class CustomerController {
 
     @DeleteMapping("/{id}")
     @CacheEvict(value = "customers", allEntries = true)
+    @Operation(
+            summary = "Delete a customer by ID",
+            description = "Deletes a customer from the database using the specified ID. Clears the cache associated with the list of customers.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Customer successfully deleted",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = String.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Customer with the specified ID not found",
+                            content = @Content(mediaType = "application/json")
+                    )
+            },
+            parameters = {
+                    @Parameter(
+                            name = "id",
+                            description = "The ID of the customer to delete",
+                            required = true,
+                            example = "456"
+                    )
+            }
+    )
     public ResponseEntity<String> deleteCustomer(@PathVariable Long id) {
         return ResponseEntity.ok(customerService.deleteCustomer(id));
     }
 
+
+
+    @Operation(
+            summary = "Get all available customers",
+            description = "Retrieves a paginated list of available customers with optional sorting.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully fetched list of available customers",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = Page.class))),
+            }
+    )
     @GetMapping("/available")
     @Cacheable(value = "customers")
     public ResponseEntity<Page<CustomerDto>> getAllCustomersAvailable(
