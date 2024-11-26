@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.carrent.coursework.dto.CarCreationDto;
@@ -34,6 +35,7 @@ public class CarController {
     @Operation(
             summary = "Get car by ID",
             description = "Fetches car details based on the provided ID.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully fetched car details",
                             content = @Content(mediaType = "application/json",
@@ -50,6 +52,7 @@ public class CarController {
     @Operation(
             summary = "Get all cars with pagination",
             description = "Retrieves a paginated list of cars with optional sorting.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully fetched list of cars",
                             content = @Content(mediaType = "application/json",
@@ -76,6 +79,7 @@ public class CarController {
     @Operation(
             summary = "Get all available cars",
             description = "Retrieves a paginated list of available cars with optional sorting.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully fetched list of available cars",
                             content = @Content(mediaType = "application/json",
@@ -101,6 +105,7 @@ public class CarController {
     @Operation(
             summary = "Create a new car",
             description = "Adds a new car to the system and clears cache.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "201", description = "Car created successfully",
                             content = @Content(mediaType = "application/json",
@@ -116,6 +121,7 @@ public class CarController {
     @Operation(
             summary = "Update car details",
             description = "Updates car details by ID and clears cache.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Car updated successfully",
                             content = @Content(mediaType = "application/json",
@@ -135,6 +141,7 @@ public class CarController {
     @Operation(
             summary = "Get sorted cars",
             description = "Fetches a sorted list of cars based on specified criteria.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully fetched sorted cars",
                             content = @Content(mediaType = "application/json",
@@ -154,6 +161,7 @@ public class CarController {
     @Operation(
             summary = "Get filtered cars",
             description = "Retrieves a list of cars filtered by specific parameters.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully fetched filtered cars",
                             content = @Content(mediaType = "application/json",
@@ -184,6 +192,7 @@ public class CarController {
     @Operation(
             summary = "Delete a car by ID",
             description = "Deletes a car from the database using the specified ID. Also clears the cache associated with the list of cars.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(
                             responseCode = "200",

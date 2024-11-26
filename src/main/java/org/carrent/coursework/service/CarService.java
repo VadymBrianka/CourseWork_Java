@@ -91,10 +91,11 @@ public class CarService {
     @Transactional
     public CarDto create(CarCreationDto carCreationDto) {
         logger.info("Creating car with license plate: {}", carCreationDto.licensePlate());
-        if (carRepository.existsByLicensePlate(carCreationDto.licensePlate())) {
-            logger.warn("Car with license plate {} already exists", carCreationDto.licensePlate());
-            throw new CarAlreadyExistsException("Car with license plate " + carCreationDto.licensePlate() + " already exists");
+        if (carRepository.existsByLicensePlateAndDeletedIsFalse(carCreationDto.licensePlate())) {
+            logger.warn("Car with license plate {} already exists and is not deleted", carCreationDto.licensePlate());
+            throw new CarAlreadyExistsException("Car with license plate " + carCreationDto.licensePlate() + " already exists and is not deleted");
         }
+
 
         Car car = carMapper.toEntity(carCreationDto);
         car.setStatus(CarStatus.AVAILABLE);

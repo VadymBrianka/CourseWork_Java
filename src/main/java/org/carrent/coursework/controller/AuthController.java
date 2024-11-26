@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -46,10 +47,10 @@ public class AuthController {
         return authenticationService.signUp(request);
     }
 
-
     @PostMapping("/sign-in")
     @Operation(
             summary = "User Login",
+            security = @SecurityRequirement(name = "BearerAuth"),
             description = "Authenticates a user with their credentials and returns a JWT for further use.",
             responses = {
                     @ApiResponse(
@@ -68,11 +69,11 @@ public class AuthController {
         return authenticationService.signIn(request);
     }
 
-
     @PostMapping("/refresh-token")
     @Operation(
             summary = "Refresh JWT",
             description = "Generates a new JWT for the currently authenticated user based on their session.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -94,10 +95,12 @@ public class AuthController {
     }
 
 
+
     @GetMapping("/current-user")
     @Operation(
             summary = "Get Current User",
             description = "Returns details of the currently authenticated user, including username and roles.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -119,6 +122,7 @@ public class AuthController {
     @Operation(
             summary = "Get ADMIN Role (Demo Purpose)",
             description = "Fetches or ensures the existence of a user with the ADMIN role for demonstration purposes.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(
                             responseCode = "200",

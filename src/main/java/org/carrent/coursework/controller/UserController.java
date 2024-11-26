@@ -5,14 +5,12 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import org.carrent.coursework.dto.CarCreationDto;
 import org.carrent.coursework.dto.CarDto;
 import org.carrent.coursework.dto.UserCreationDto;
 import org.carrent.coursework.dto.UserDto;
-import org.carrent.coursework.entity.User;
-import org.carrent.coursework.enums.CarStatus;
 import org.carrent.coursework.service.UserService;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -25,9 +23,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/users")
 @AllArgsConstructor
@@ -37,6 +32,7 @@ public class UserController {
     @Operation(
             summary = "Get user by ID",
             description = "Fetches user details based on the provided ID.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully fetched user details",
                             content = @Content(mediaType = "application/json",
@@ -53,6 +49,7 @@ public class UserController {
     @Operation(
             summary = "Get all users with pagination",
             description = "Retrieves a paginated list of users with optional sorting.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully fetched list of users",
                             content = @Content(mediaType = "application/json",
@@ -78,6 +75,7 @@ public class UserController {
     @Operation(
             summary = "Get all available users",
             description = "Retrieves a paginated list of available users with optional sorting.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully fetched list of available users",
                             content = @Content(mediaType = "application/json",
@@ -103,6 +101,7 @@ public class UserController {
     @Operation(
             summary = "Create a new user",
             description = "Adds a new user to the system and clears cache.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "201", description = "User created successfully",
                             content = @Content(mediaType = "application/json",
@@ -118,6 +117,7 @@ public class UserController {
     @Operation(
             summary = "Update user details",
             description = "Updates user details by ID and clears cache.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "User updated successfully",
                             content = @Content(mediaType = "application/json",
@@ -137,6 +137,7 @@ public class UserController {
     @Operation(
             summary = "Get sorted users",
             description = "Fetches a sorted list of users based on specified criteria.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully fetched sorted users",
                             content = @Content(mediaType = "application/json",
@@ -156,6 +157,7 @@ public class UserController {
     @Operation(
             summary = "Get filtered users",
             description = "Retrieves a list of users filtered by specific parameters.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully fetched filtered users",
                             content = @Content(mediaType = "application/json",
@@ -180,6 +182,7 @@ public class UserController {
     @Operation(
             summary = "Delete a user by ID",
             description = "Deletes a user from the database using the specified ID. Also clears the cache associated with the list of users.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(
                             responseCode = "200",

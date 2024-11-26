@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.carrent.coursework.dto.ServiceOfCarCreationDto;
@@ -37,6 +38,7 @@ public class ServiceOfCarController {
     @Operation(
             summary = "Get service by ID",
             description = "Fetches service details based on provided ID",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -58,6 +60,7 @@ public class ServiceOfCarController {
     @Operation(
             summary = "Get all services",
             description = "Fetches all services with pagination",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -89,6 +92,7 @@ public class ServiceOfCarController {
     @Operation(
             summary = "Create a new service",
             description = "Creates a new service entry in the system",
+            security = @SecurityRequirement(name = "BearerAuth"),
             requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Details of the service to be created",
                     required = true,
@@ -117,6 +121,7 @@ public class ServiceOfCarController {
     @Operation(
             summary = "Update an existing service",
             description = "Updates the details of an existing service based on its ID",
+            security = @SecurityRequirement(name = "BearerAuth"),
             requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Service update details",
                     required = true,
@@ -146,6 +151,7 @@ public class ServiceOfCarController {
     @Operation(
             summary = "Get sorted services",
             description = "Fetches services sorted by specified field and order",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -170,6 +176,7 @@ public class ServiceOfCarController {
     @Operation(
             summary = "Filter services",
             description = "Fetches services that match the specified filters",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -209,6 +216,7 @@ public class ServiceOfCarController {
     @Operation(
             summary = "Delete a service by ID",
             description = "Deletes a service record from the database using the specified ID. Also clears the cache associated with the list of services.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -238,6 +246,7 @@ public class ServiceOfCarController {
     @Operation(
             summary = "Get all available services",
             description = "Retrieves a paginated list of available services with optional sorting.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully fetched list of available services",
                             content = @Content(mediaType = "application/json",

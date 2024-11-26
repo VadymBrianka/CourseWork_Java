@@ -80,7 +80,7 @@ public class UserService {
         User user = userMapper.toEntity(userCreationDto);
         if (userRepository.existsByUsername(userCreationDto.username())) {
             logger.warn("User with username {} already exists", userCreationDto.username());
-            throw new UserAlreadyExistsException("Car with license plate " + userCreationDto.username() + " already exists");
+            throw new UserAlreadyExistsException("User with username " + userCreationDto.username() + " already exists");
         }
         User savedUser = userRepository.save(user);
 

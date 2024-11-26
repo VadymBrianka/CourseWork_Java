@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.carrent.coursework.dto.CustomerDto;
@@ -36,6 +37,7 @@ public class EmployeeController {
     @Operation(
             summary = "Get employee by ID",
             description = "Fetches employee details based on the provided ID",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully fetched employee",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = EmployeeDto.class))),
@@ -51,6 +53,7 @@ public class EmployeeController {
     @Operation(
             summary = "Get all employees",
             description = "Fetches all employees with pagination and sorting options",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully fetched employees",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = Page.class))),
@@ -75,6 +78,7 @@ public class EmployeeController {
     @Operation(
             summary = "Create a new employee",
             description = "Creates a new employee and saves it to the database",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "201", description = "Employee successfully created",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = EmployeeDto.class))),
@@ -90,6 +94,7 @@ public class EmployeeController {
     @Operation(
             summary = "Update an existing employee",
             description = "Updates details of an existing employee based on the provided ID",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Employee successfully updated",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = EmployeeDto.class))),
@@ -109,6 +114,7 @@ public class EmployeeController {
     @Operation(
             summary = "Get sorted employees",
             description = "Fetches employees sorted by a specified field and order",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully fetched sorted employees",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = Page.class))),
@@ -131,6 +137,7 @@ public class EmployeeController {
     @Operation(
             summary = "Filter employees",
             description = "Fetches employees based on provided filter criteria",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully fetched filtered employees",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = Page.class))),
@@ -163,6 +170,7 @@ public class EmployeeController {
     @Operation(
             summary = "Delete an employee by ID",
             description = "Deletes an employee from the database using the specified ID. Also clears the cache associated with the list of employees.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -193,6 +201,7 @@ public class EmployeeController {
     @Operation(
             summary = "Get all available employees",
             description = "Retrieves a paginated list of available employees with optional sorting.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully fetched list of available employees",
                             content = @Content(mediaType = "application/json",

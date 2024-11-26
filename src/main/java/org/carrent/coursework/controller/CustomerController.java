@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.carrent.coursework.dto.CustomerCreationDto;
@@ -34,6 +35,7 @@ public class CustomerController {
     @Operation(
             summary = "Get customer by ID",
             description = "Fetches customer details based on the provided ID.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully fetched customer details",
                             content = @Content(mediaType = "application/json",
@@ -50,6 +52,7 @@ public class CustomerController {
     @Operation(
             summary = "Get all customers with pagination",
             description = "Retrieves a paginated list of customers with optional sorting.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully fetched list of customers",
                             content = @Content(mediaType = "application/json",
@@ -74,6 +77,7 @@ public class CustomerController {
     @Operation(
             summary = "Create a new customer",
             description = "Adds a new customer to the system and clears cache.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "201", description = "Customer created successfully",
                             content = @Content(mediaType = "application/json",
@@ -89,6 +93,7 @@ public class CustomerController {
     @Operation(
             summary = "Update customer details",
             description = "Updates customer details by ID and clears cache.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Customer updated successfully",
                             content = @Content(mediaType = "application/json",
@@ -108,6 +113,7 @@ public class CustomerController {
     @Operation(
             summary = "Get sorted customers",
             description = "Fetches a sorted list of customers based on specified criteria.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully fetched sorted customers",
                             content = @Content(mediaType = "application/json",
@@ -127,6 +133,7 @@ public class CustomerController {
     @Operation(
             summary = "Get filtered customers",
             description = "Retrieves a list of customers filtered by specific parameters.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully fetched filtered customers",
                             content = @Content(mediaType = "application/json",
@@ -159,6 +166,7 @@ public class CustomerController {
     @Operation(
             summary = "Delete a customer by ID",
             description = "Deletes a customer from the database using the specified ID. Clears the cache associated with the list of customers.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -189,6 +197,7 @@ public class CustomerController {
     @Operation(
             summary = "Get all available customers",
             description = "Retrieves a paginated list of available customers with optional sorting.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully fetched list of available customers",
                             content = @Content(mediaType = "application/json",

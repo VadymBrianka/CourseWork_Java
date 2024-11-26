@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.carrent.coursework.dto.EmployeeDto;
@@ -39,6 +40,7 @@ public class OrderController {
     @Operation(
             summary = "Get order by ID",
             description = "Fetches order details based on provided ID.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully fetched order",
                             content = @Content(mediaType = "application/json",
@@ -55,6 +57,7 @@ public class OrderController {
     @Operation(
             summary = "Get all orders",
             description = "Fetches a paginated list of orders with optional sorting.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully fetched orders",
                             content = @Content(mediaType = "application/json",
@@ -80,6 +83,7 @@ public class OrderController {
     @Operation(
             summary = "Create a new order",
             description = "Creates a new order with the provided details.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Order creation details",
                     required = true,
@@ -107,6 +111,7 @@ public class OrderController {
     @Operation(
             summary = "Update an existing order",
             description = "Updates the details of an existing order based on its ID.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Order update details",
                     required = true,
@@ -144,6 +149,7 @@ public class OrderController {
     @Operation(
             summary = "Get sorted orders",
             description = "Fetches a list of orders sorted by a specified field and order.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully fetched sorted orders",
                             content = @Content(mediaType = "application/json",
@@ -167,6 +173,7 @@ public class OrderController {
     @Operation(
             summary = "Filter orders",
             description = "Fetches orders based on various filter criteria.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully fetched filtered orders",
                             content = @Content(mediaType = "application/json",
@@ -201,6 +208,7 @@ public class OrderController {
     @Operation(
             summary = "Delete an order by ID",
             description = "Deletes an order from the database using the specified ID. Also clears the cache associated with the orders.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -232,6 +240,7 @@ public class OrderController {
     @Operation(
             summary = "Get all available orders",
             description = "Retrieves a paginated list of available orders with optional sorting.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully fetched list of available orders",
                             content = @Content(mediaType = "application/json",
